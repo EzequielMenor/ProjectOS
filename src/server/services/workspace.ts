@@ -28,3 +28,8 @@ export async function listMembers() {
   const ws = await getDefaultWorkspace();
   return db.query.member.findMany({ where: eq(member.workspaceId, ws.id), orderBy: member.createdAt });
 }
+
+/** Call after replacing the database contents (restore): the cached workspace row may be gone. */
+export function resetWorkspaceCache() {
+  g.__projectosWs = undefined;
+}

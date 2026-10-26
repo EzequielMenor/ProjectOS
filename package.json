@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "projectos": "tsx src/cli/projectos.ts",
+    "backup": "tsx src/cli/projectos.ts backup"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
