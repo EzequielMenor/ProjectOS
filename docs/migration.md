@@ -41,7 +41,11 @@ Los elementos importados llevan `createdBy = plane-import` y un evento `project.
 
 ## Lo que NO se importa (todavía) y se avisa
 
-- **Páginas** de Plane: se guardan en el snapshot; el módulo de documentos llega en otra fase.
+- **Páginas** de Plane: se guardan en el snapshot, pero el importador todavía no las convierte a Docs. En el workspace
+  `ezequieldev` se comprobó (snapshot y consulta directa a Plane) que no existe ninguna salvo la de bienvenida, vacía, así
+  que no había nada que traer. Lo que sí tenía contenido real son las **descripciones de proyecto** (FICH y AIES): se
+  guardan en el proyecto, pero la interfaz no las muestra, así que se copiaron a una página de Docs «Resumen del proyecto
+  (importado de Plane)» en cada uno (con los `AIES-10` convertidos en enlaces). Se hizo con un script puntual, no con el CLI.
 - **Asignados** (no hay usuarios en ProjectOS local), estimaciones (`estimate_point` es un id de escala), adjuntos y
   relaciones de calendario (`start_after`, `finish_before`…).
 - Hitos/milestones y vistas guardadas de Plane.
