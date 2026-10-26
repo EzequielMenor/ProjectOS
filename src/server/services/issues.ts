@@ -346,3 +346,8 @@ export async function addRelation(issueId: string, raw: unknown, actor = "user")
     });
   return created ?? null;
 }
+
+export async function listActivity(issueId: string) {
+  const db = await getDb();
+  return db.query.activity.findMany({ where: eq(activity.issueId, issueId), orderBy: asc(activity.createdAt) });
+}
