@@ -27,6 +27,7 @@ const TABLES = [
   ["issue_relation", s.issueRelation],
   ["comment", s.comment],
   ["issue_link", s.issueLink],
+  ["saved_view", s.savedView],
   ["page", s.page],
   ["page_version", s.pageVersion],
   ["page_issue_link", s.pageIssueLink],
@@ -35,7 +36,7 @@ const TABLES = [
 ] as const satisfies readonly (readonly [string, PgTable])[];
 
 /** Tables added after v1 of the format: older backups may not contain them. */
-const OPTIONAL_TABLES = new Set(["cycle", "module", "milestone", "issue_module", "page", "page_version", "page_issue_link", "page_page_link"]);
+const OPTIONAL_TABLES = new Set(["cycle", "module", "milestone", "issue_module", "saved_view", "page", "page_version", "page_issue_link", "page_page_link"]);
 
 type Row = Record<string, unknown>;
 

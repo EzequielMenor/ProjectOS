@@ -15,6 +15,9 @@ export type IssueDTO = {
   assigneeId: string | null;
   estimate: number | null;
   dueDate: string | null;
+  cycleId: string | null;
+  milestoneId: string | null;
+  moduleIds: string[];
   sortOrder: number;
   labels: LabelDTO[];
   pending?: boolean;
@@ -31,6 +34,9 @@ type IssueRowLike = {
   assigneeId: string | null;
   estimate: number | null;
   dueDate: string | null;
+  cycleId: string | null;
+  milestoneId: string | null;
+  modules: { moduleId: string }[];
   sortOrder: number;
   labels: { label: LabelDTO }[];
 };
@@ -48,6 +54,9 @@ export function toIssueDTO(row: IssueRowLike, identifier: string): IssueDTO {
     assigneeId: row.assigneeId,
     estimate: row.estimate,
     dueDate: row.dueDate,
+    cycleId: row.cycleId,
+    milestoneId: row.milestoneId,
+    moduleIds: row.modules.map((m) => m.moduleId),
     sortOrder: row.sortOrder,
     labels: row.labels.map((l) => ({ id: l.label.id, name: l.label.name, color: l.label.color })),
   };

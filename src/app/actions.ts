@@ -7,6 +7,7 @@ import type { Priority, StateGroup } from "@/db/schema";
 import { addComment, addRelation, createIssue, issueKey, moveIssue, removeRelation, searchIssues, setIssueArchived, updateIssue } from "@/server/services/issues";
 import { ensureLabel } from "@/server/services/labels";
 import { createPage, restorePageVersion, searchPages, setPageArchived, updatePage } from "@/server/services/pages";
+import { createView, deleteView } from "@/server/services/views";
 import { createProject, listProjects } from "@/server/services/projects";
 import { createToken, revokeToken } from "@/server/services/tokens";
 import { assignIssue, createCycle, createMilestone, createModule } from "@/server/services/planning";
@@ -134,6 +135,19 @@ export async function restorePageVersionAction(id: string, versionId: string) {
 export async function archivePageAction(id: string, archived: boolean) {
   return run(async () => {
     await setPageArchived(id, archived);
+  });
+}
+
+export async function createViewAction(input: unknown) {
+  return run(async () => {
+    const v = await createView(input);
+    return { id: v.id };
+  });
+}
+
+export async function deleteViewAction(id: string, projectId: string) {
+  return run(async () => {
+    await deleteView(id, projectId);
   });
 }
 

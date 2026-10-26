@@ -308,6 +308,23 @@ export const pagePageLink = pgTable(
   (t) => [primaryKey({ columns: [t.pageId, t.targetPageId] }), index("page_page_link_target_idx").on(t.targetPageId)],
 );
 
+export const VIEW_LAYOUTS = ["list", "board", "table"] as const;
+export type ViewLayout = (typeof VIEW_LAYOUTS)[number];
+
+/** A named layout + filter set. `query` is the URL query string the filter bar produces (state=…&priority=…). */
+export const savedView = pgTable(
+  "saved_view",
+  {
+    id: id(),
+    projectId: uuid("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    layout: text("layout", { enum: VIEW_LAYOUTS }).notNull().default("list"),
+    query: text("query").notNull().default(""),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("saved_view_project_name").on(t.projectId, t.name)],
+);
+
 export const projectRelations = relations(project, ({ many }) => ({
   states: many(state),
   issues: many(issue),

@@ -3,7 +3,7 @@
 import { useRouter, useParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, FolderPlus, GanttChart, KeyRound, LayoutList, Moon, Search } from "lucide-react";
+import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, FolderPlus, GanttChart, KeyRound, LayoutList, Moon, Search, Table2 } from "lucide-react";
 import { searchAction, type PageHit, type SearchHit } from "@/app/actions";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command";
 import { PriorityIcon, StateIcon } from "@/lib/issue-meta";
@@ -14,6 +14,7 @@ export const OPEN_PALETTE = "projectos:palette";
 const VIEWS = [
   { slug: "list", label: "Lista", key: "l", icon: LayoutList },
   { slug: "board", label: "Kanban", key: "b", icon: Columns3 },
+  { slug: "table", label: "Tabla", key: "t", icon: Table2 },
   { slug: "cycles", label: "Ciclos", key: "c", icon: CalendarRange },
   { slug: "modules", label: "Módulos", key: "m", icon: Boxes },
   { slug: "milestones", label: "Hitos", key: "h", icon: Flag },

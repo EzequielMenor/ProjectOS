@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import {
   DndContext,
@@ -20,16 +20,19 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
-import { LayoutList, Columns3, Plus } from "lucide-react";
+import { LayoutList, Columns3, Plus, Table2, ArrowDown, ArrowUp } from "lucide-react";
 import { PRIORITIES, type Priority } from "@/db/schema";
-import type { IssueDTO, StateDTO } from "@/server/dto";
+import type { IssueDTO, LabelDTO, StateDTO } from "@/server/dto";
+import { applyFilters, parseFilters, serializeFilters, type Filters } from "@/lib/issue-filters";
+import { FilterBar, type SavedViewDTO } from "./filter-bar";
 import { createIssueAction, moveIssueAction, updateIssueAction } from "@/app/actions";
 import { PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
 import { cn } from "@/lib/utils";
 import { OptionPicker } from "./option-picker";
 
 type Project = { id: string; identifier: string; name: string };
-type View = "list" | "board";
+type View = "list" | "board" | "table";
+type Named = { id: string; name: string };
 
 type Op =
   | { type: "add"; issue: IssueDTO }
@@ -54,25 +57,51 @@ export function IssueWorkspace({
   states,
   initialIssues,
   view,
+  labels,
+  cycles,
+  modules,
+  views,
 }: {
   project: Project;
   states: StateDTO[];
   initialIssues: IssueDTO[];
   view: View;
+  labels: LabelDTO[];
+  cycles: Named[];
+  modules: Named[];
+  views: SavedViewDTO[];
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [issues, applyOp] = useOptimistic(initialIssues, reduce);
   const [selected, setSelected] = useState<string | null>(null);
   const [creatingIn, setCreatingIn] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [filters, setFiltersState] = useState<Filters>(() => parseFilters(searchParams));
+  // Navigation (a saved view, back/forward) changes the URL: adopt it. Our own history.replaceState
+  // produces a URL equal to the current filters, so it is a no-op.
+  const urlQuery = searchParams.toString();
+  const [seenUrl, setSeenUrl] = useState(urlQuery);
+  if (urlQuery !== seenUrl) {
+    setSeenUrl(urlQuery);
+    const fromUrl = parseFilters(searchParams);
+    if (serializeFilters(fromUrl) !== serializeFilters(filters)) setFiltersState(fromUrl);
+  }
+  const query = serializeFilters(filters);
+  const setFilters = (f: Filters) => {
+    setFiltersState(f);
+    const qs = serializeFilters(f);
+    window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+  };
+  const visible = useMemo(() => applyFilters(issues, filters), [issues, filters]);
 
   const columns = useMemo(
     () =>
       states.map((s) => ({
         state: s,
-        issues: issues.filter((i) => i.stateId === s.id).sort(bySort),
+        issues: visible.filter((i) => i.stateId === s.id).sort(bySort),
       })),
-    [states, issues],
+    [states, visible],
   );
   const flat = useMemo(() => columns.flatMap((c) => c.issues), [columns]);
   const defaultStateId = states.find((s) => s.group === "unstarted")?.id ?? states[0]?.id;
@@ -103,6 +132,9 @@ export function IssueWorkspace({
         assigneeId: null,
         estimate: null,
         dueDate: null,
+        cycleId: null,
+        milestoneId: null,
+        moduleIds: [],
         sortOrder: minSort - 1000,
         labels: [],
         pending: true,
@@ -117,7 +149,7 @@ export function IssueWorkspace({
   const setState = (id: string, stateId: string) =>
     mutate({ type: "patch", id, patch: { stateId } }, () => updateIssueAction(id, { stateId }));
 
-  // Keyboard: j/k move, Enter opens, c creates, l/b switch view.
+  // Keyboard: j/k move, Enter opens, c creates, l/b/t switch view.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
@@ -138,6 +170,7 @@ export function IssueWorkspace({
         setCreatingIn(defaultStateId ?? null);
       } else if (e.key === "l") router.push(`/${project.identifier}/list`);
       else if (e.key === "b") router.push(`/${project.identifier}/board`);
+      else if (e.key === "t") router.push(`/${project.identifier}/table`);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -148,10 +181,11 @@ export function IssueWorkspace({
       <header className="flex h-12 shrink-0 items-center gap-3 border-b px-4">
         <span className="size-2.5 rounded-sm" style={{ background: "var(--primary)" }} aria-hidden />
         <h1 className="text-sm font-medium">{project.name}</h1>
-        <span className="text-xs text-muted-foreground tabular-nums">{flat.length} issues</span>
+        <span className="text-xs text-muted-foreground tabular-nums">{flat.length === issues.length ? `${flat.length} issues` : `${flat.length} de ${issues.length} issues`}</span>
         <nav className="ml-auto flex items-center gap-1 rounded-md border p-0.5" aria-label="Vista">
-          <ViewLink href={`/${project.identifier}/list`} active={view === "list"} icon={<LayoutList className="size-3.5" />} label="Lista" />
-          <ViewLink href={`/${project.identifier}/board`} active={view === "board"} icon={<Columns3 className="size-3.5" />} label="Kanban" />
+          <ViewLink href={`/${project.identifier}/list${query ? `?${query}` : ""}`} active={view === "list"} icon={<LayoutList className="size-3.5" />} label="Lista" />
+          <ViewLink href={`/${project.identifier}/board${query ? `?${query}` : ""}`} active={view === "board"} icon={<Columns3 className="size-3.5" />} label="Kanban" />
+          <ViewLink href={`/${project.identifier}/table${query ? `?${query}` : ""}`} active={view === "table"} icon={<Table2 className="size-3.5" />} label="Tabla" />
         </nav>
         <button
           onClick={() => setCreatingIn(defaultStateId ?? null)}
@@ -160,8 +194,11 @@ export function IssueWorkspace({
           <Plus className="size-3.5" /> Nuevo issue <kbd className="ml-1 rounded bg-white/20 px-1 text-[10px]">C</kbd>
         </button>
       </header>
+      <FilterBar filters={filters} onChange={setFilters} states={states} labels={labels} cycles={cycles} modules={modules} views={views} project={project} layout={view} />
       <div className="min-h-0 flex-1 overflow-auto">
-        {view === "list" ? (
+        {view === "table" ? (
+          <TableView issues={visible} total={issues.length} project={project} states={states} cycles={cycles} onPriority={setPriority} onState={setState} onClear={() => setFilters(parseFilters(new URLSearchParams()))} />
+        ) : view === "list" ? (
           <ListView
             columns={columns}
             project={project}
@@ -194,6 +231,132 @@ export function IssueWorkspace({
         )}
       </div>
     </div>
+  );
+}
+
+type SortKey = "key" | "title" | "state" | "priority" | "due" | "estimate";
+const PRIORITY_RANK: Record<Priority, number> = { urgent: 0, high: 1, medium: 2, low: 3, none: 4 };
+
+type Sort = { key: SortKey; dir: 1 | -1 };
+
+function Th({ k, sort, onSort, children, className }: { k?: SortKey; sort: Sort; onSort: (s: Sort) => void; children: React.ReactNode; className?: string }) {
+  return (
+    <th scope="col" aria-sort={k && sort.key === k ? (sort.dir === 1 ? "ascending" : "descending") : undefined} className={cn("h-8 px-3 text-left text-xs font-medium text-muted-foreground", className)}>
+      {k ? (
+        <button onClick={() => onSort(sort.key === k ? { key: k, dir: (-sort.dir) as 1 | -1 } : { key: k, dir: 1 })} className="inline-flex items-center gap-1 hover:text-foreground">
+          {children}
+          {sort.key === k ? sort.dir === 1 ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" /> : null}
+        </button>
+      ) : (
+        children
+      )}
+    </th>
+  );
+}
+
+function TableView({
+  issues, total, project, states, cycles, onPriority, onState, onClear,
+}: {
+  issues: IssueDTO[];
+  total: number;
+  project: Project;
+  states: StateDTO[];
+  cycles: Named[];
+  onPriority: (id: string, p: Priority) => void;
+  onState: (id: string, s: string) => void;
+  onClear: () => void;
+}) {
+  const [sort, setSort] = useState<Sort>({ key: "key", dir: -1 });
+  const stateById = useMemo(() => new Map(states.map((s) => [s.id, s])), [states]);
+  const cycleName = useMemo(() => new Map(cycles.map((c) => [c.id, c.name])), [cycles]);
+  const rows = useMemo(() => {
+    const val = (i: IssueDTO): string | number => {
+      switch (sort.key) {
+        case "key": return i.seq;
+        case "title": return i.title.toLowerCase();
+        case "state": return stateById.get(i.stateId)?.position ?? 0;
+        case "priority": return PRIORITY_RANK[i.priority];
+        case "due": return i.dueDate ?? "9999";
+        case "estimate": return i.estimate ?? -1;
+      }
+    };
+    return [...issues].sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sort.dir);
+  }, [issues, sort, stateById]);
+
+  if (rows.length === 0)
+    return (
+      <div className="mx-auto flex h-full max-w-sm flex-col items-center justify-center gap-3 text-center">
+        <h2 className="text-base font-medium">{total ? "Ningún issue coincide con los filtros" : "Aún no hay issues"}</h2>
+        {total ? (
+          <button onClick={onClear} className="h-8 rounded-md border px-3 text-sm hover:bg-accent">Limpiar filtros</button>
+        ) : (
+          <p className="text-sm text-muted-foreground">Crea el primero desde la vista Lista o con el botón «Nuevo issue».</p>
+        )}
+      </div>
+    );
+
+  return (
+    <table className="w-full min-w-[44rem] border-collapse text-sm" data-testid="issue-table">
+      <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
+        <tr className="border-b">
+          <Th sort={sort} onSort={setSort} k="priority" className="w-10"><span className="sr-only">Prioridad</span></Th>
+          <Th sort={sort} onSort={setSort} k="key" className="w-24">Clave</Th>
+          <Th sort={sort} onSort={setSort} k="title">Título</Th>
+          <Th sort={sort} onSort={setSort} k="state" className="w-36">Estado</Th>
+          <Th sort={sort} onSort={setSort}>Etiquetas</Th>
+          <Th sort={sort} onSort={setSort} className="w-32">Ciclo</Th>
+          <Th sort={sort} onSort={setSort} k="due" className="w-28">Límite</Th>
+          <Th sort={sort} onSort={setSort} k="estimate" className="w-16 text-right">Est.</Th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((i) => {
+          const st = stateById.get(i.stateId)!;
+          return (
+            <tr key={i.id} data-testid="issue-row" className={cn("h-9 border-b hover:bg-accent/40", i.pending && "opacity-60")}>
+              <td className="px-3">
+                <OptionPicker
+                  title="Prioridad"
+                  value={i.priority}
+                  onChange={(v) => onPriority(i.id, v as Priority)}
+                  options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABEL[p], icon: <PriorityIcon priority={p} /> }))}
+                >
+                  <PriorityIcon priority={i.priority} />
+                </OptionPicker>
+              </td>
+              <td className="px-3 font-mono text-xs text-muted-foreground tabular-nums">{i.key}</td>
+              <td className="max-w-0 px-3">
+                {i.pending ? <span className="block truncate">{i.title}</span> : <Link href={`/${project.identifier}/issues/${i.seq}`} className="block truncate hover:underline">{i.title}</Link>}
+              </td>
+              <td className="px-3">
+                <OptionPicker
+                  title="Estado"
+                  value={i.stateId}
+                  onChange={(v) => onState(i.id, v)}
+                  options={states.map((s) => ({ value: s.id, label: s.name, icon: <StateIcon group={s.group} color={s.color} /> }))}
+                >
+                  <StateIcon group={st.group} color={st.color} />
+                  <span className="text-xs">{st.name}</span>
+                </OptionPicker>
+              </td>
+              <td className="px-3">
+                <span className="flex flex-wrap gap-1">
+                  {i.labels.map((l) => (
+                    <span key={l.id} className="inline-flex items-center gap-1 rounded-full border px-1.5 text-[11px]">
+                      <span className="size-1.5 rounded-full" style={{ background: l.color }} />
+                      {l.name}
+                    </span>
+                  ))}
+                </span>
+              </td>
+              <td className="truncate px-3 text-xs text-muted-foreground">{i.cycleId ? cycleName.get(i.cycleId) ?? "—" : "—"}</td>
+              <td className="px-3 text-xs tabular-nums text-muted-foreground">{i.dueDate ?? "—"}</td>
+              <td className="px-3 text-right text-xs tabular-nums text-muted-foreground">{i.estimate ?? "—"}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
