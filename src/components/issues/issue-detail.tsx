@@ -100,7 +100,7 @@ export function IssueDetail({ issue, states, activity, planning }: { issue: Deta
             placeholder="Añade una descripción (Markdown)…"
             onChange={(e) => setDescription(e.target.value)}
             onBlur={() => description !== issue.description && save({ description })}
-            className="mt-4 min-h-32 resize-y border-transparent bg-transparent px-0 shadow-none focus-visible:border-input focus-visible:px-3"
+            className="mt-4 min-h-32 resize-y border-transparent bg-transparent px-0 shadow-none focus-visible:border-input focus-visible:px-3 dark:bg-transparent"
           />
           {issue.links.length ? (
             <section className="mt-6">
@@ -178,8 +178,11 @@ export function IssueDetail({ issue, states, activity, planning }: { issue: Deta
               options={states.map((s) => ({ value: s.id, label: s.name, icon: <StateIcon group={s.group} color={s.color} /> }))}
               className="w-full"
             >
-              <StateIcon group={state.group} color={state.color} />
-              {state.name}
+              <span className="text-muted-foreground">Estado</span>
+              <span className="ml-auto flex items-center gap-1.5">
+                <StateIcon group={state.group} color={state.color} />
+                {state.name}
+              </span>
             </OptionPicker>
             <OptionPicker
               title="Prioridad"
@@ -188,8 +191,11 @@ export function IssueDetail({ issue, states, activity, planning }: { issue: Deta
               options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABEL[p], icon: <PriorityIcon priority={p} /> }))}
               className="w-full"
             >
-              <PriorityIcon priority={issue.priority} />
-              {PRIORITY_LABEL[issue.priority]}
+              <span className="text-muted-foreground">Prioridad</span>
+              <span className="ml-auto flex items-center gap-1.5">
+                <PriorityIcon priority={issue.priority} />
+                {PRIORITY_LABEL[issue.priority]}
+              </span>
             </OptionPicker>
             <OptionPicker
               title="Ciclo"
