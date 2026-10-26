@@ -8,6 +8,8 @@ import {
   DragOverlay,
   PointerSensor,
   closestCorners,
+  pointerWithin,
+  type CollisionDetection,
   useDroppable,
   useSensor,
   useSensors,
@@ -328,6 +330,12 @@ function ListView({
   );
 }
 
+/** The column under the pointer wins; closestCorners alone prefers tall neighbouring columns. */
+const collision: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  return hits.length ? hits : closestCorners(args);
+};
+
 function BoardView({
   columns, project, selected, setSelected, creatingIn, setCreatingIn, onCreate, onMove,
 }: SharedViewProps & { onMove: (id: string, stateId: string, prevId: string | null, nextId: string | null) => void }) {
@@ -347,14 +355,16 @@ function BoardView({
   };
   const onDragOver = (e: DragOverEvent) => {
     const { active: a, over } = e;
-    if (!over || !local) return;
-    const from = findCol(String(a.id), local);
-    const to = findCol(String(over.id), local);
+    // dragOver can fire before the render caused by onDragStart; fall back to the source columns.
+    const base = local ?? columns;
+    if (!over) return;
+    const from = findCol(String(a.id), base);
+    const to = findCol(String(over.id), base);
     if (!from || !to || from.state.id === to.state.id) return;
     const moving = from.issues.find((i) => i.id === a.id)!;
     const overIdx = to.issues.findIndex((i) => i.id === over.id);
     setLocal(
-      local.map((c) => {
+      base.map((c) => {
         if (c.state.id === from.state.id) return { ...c, issues: c.issues.filter((i) => i.id !== a.id) };
         if (c.state.id === to.state.id) {
           const next = [...c.issues];
@@ -367,15 +377,22 @@ function BoardView({
   };
   const onDragEnd = (e: DragEndEvent) => {
     const { active: a, over } = e;
-    let cur = local;
+    const cur = local ?? columns;
     setActiveId(null);
     setLocal(null);
-    if (!over || !cur) return;
+    if (!over) return;
     const to = findCol(String(over.id), cur);
     if (!to) return;
     let list = to.issues;
-    const oldIdx = list.findIndex((i) => i.id === a.id);
     const overIdx = list.findIndex((i) => i.id === over.id);
+    if (!list.some((i) => i.id === a.id)) {
+      // dragOver never moved it into this column: insert it where it was dropped.
+      const moving = columns.flatMap((c) => c.issues).find((i) => i.id === a.id);
+      if (!moving) return;
+      list = [...list];
+      list.splice(overIdx < 0 ? list.length : overIdx, 0, moving);
+    }
+    const oldIdx = list.findIndex((i) => i.id === a.id);
     if (oldIdx >= 0 && overIdx >= 0 && oldIdx !== overIdx) {
       const arr = [...list];
       const [m] = arr.splice(oldIdx, 1);
@@ -390,7 +407,7 @@ function BoardView({
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => { setActiveId(null); setLocal(null); }}>
+    <DndContext sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => { setActiveId(null); setLocal(null); }}>
       <div className="flex h-full gap-3 overflow-x-auto p-4">
         {cols.map(({ state, issues }) => (
           <BoardColumn key={state.id} state={state} issues={issues} project={project} selected={selected} setSelected={setSelected} creating={creatingIn === state.id} onStartCreate={() => setCreatingIn(state.id)} onStopCreate={() => setCreatingIn(null)} onCreate={onCreate} />

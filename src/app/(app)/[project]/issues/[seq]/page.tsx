@@ -20,7 +20,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
   const stateName = new Map(states.map((s) => [s.id, s.name]));
   return (
     <IssueDetail
-      key={issue.id + issue.updatedAt.getTime()}
+      key={issue.id}
       issue={{
         id: issue.id,
         key: `${issue.project.identifier}-${issue.seq}`,
