@@ -570,7 +570,7 @@ function BoardView({
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => { setActiveId(null); setLocal(null); }}>
+    <DndContext id="board-dnd" sensors={sensors} collisionDetection={collision} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => { setActiveId(null); setLocal(null); }}>
       <div className="flex h-full gap-3 overflow-x-auto p-4">
         {cols.map(({ state, issues }) => (
           <BoardColumn key={state.id} state={state} issues={issues} project={project} selected={selected} setSelected={setSelected} creating={creatingIn === state.id} onStartCreate={() => setCreatingIn(state.id)} onStopCreate={() => setCreatingIn(null)} onCreate={onCreate} />
