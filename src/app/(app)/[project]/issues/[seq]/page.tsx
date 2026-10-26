@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { IssueDetail } from "@/components/issues/issue-detail";
 import { ServiceError } from "@/server/errors";
-import { toPropertyDTO, toStateDTO } from "@/server/dto";
+import { toMemberDTO, toPropertyDTO, toStateDTO } from "@/server/dto";
+import { listMembers } from "@/server/services/workspace";
 import { listPropertyDefs } from "@/server/services/properties";
 import { getIssueByKey, listActivity, listIssues } from "@/server/services/issues";
 import { pagesMentioningIssue } from "@/server/services/pages";
@@ -21,7 +22,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
     if (e instanceof ServiceError && (e.code === "not_found" || e.code === "invalid")) notFound();
     throw e;
   });
-  const [states, activity, cycles, modules, milestones, labels, relations, siblings, mentions, propertyDefs] = await Promise.all([
+  const [states, activity, cycles, modules, milestones, labels, relations, siblings, mentions, propertyDefs, members] = await Promise.all([
     listStates(issue.projectId),
     listActivity(issue.id),
     listCycles(issue.projectId),
@@ -32,6 +33,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
     listIssues({ projectId: issue.projectId, limit: 500 }),
     pagesMentioningIssue(issue.id),
     listPropertyDefs(issue.projectId),
+    listMembers(),
   ]);
   const stateName = new Map(states.map((s) => [s.id, s.name]));
   return (
@@ -45,6 +47,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
         description: issue.description,
         stateId: issue.stateId,
         priority: issue.priority,
+        assigneeId: issue.assigneeId,
         cycleId: issue.cycleId,
         milestoneId: issue.milestoneId,
         moduleIds: issue.modules.map((m) => m.moduleId),
@@ -64,6 +67,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
       }}
       states={states.map(toStateDTO)}
       propertyDefs={propertyDefs.map(toPropertyDTO)}
+      members={members.map(toMemberDTO)}
       mentions={mentions.map((p) => ({ id: p.id, title: p.title, identifier: p.identifier }))}
       labels={labels.map((l) => ({ id: l.id, name: l.name, color: l.color }))}
       candidates={siblings

@@ -52,7 +52,7 @@ Las migraciones (`drizzle/`) se aplican solas al arrancar.
 
    | Lectura | Escritura |
    |---|---|
-   | `list_projects`, `get_project`, `list_issues`, `get_issue`, `search`, `next_work`, `list_cycles`, `list_modules`, `list_milestones`, `list_epics`, `list_properties`, `list_pages`, `get_page`, `search_pages`, `list_page_versions` | `create_issue`, `update_issue`, `set_state`, `complete_issue`, `add_comment`, `log_progress`, `add_link` (commit/PR/evidencia), `add_relation`, `archive_issue`, `create_cycle`, `create_module`, `create_milestone`, `create_property`, `assign_issue`, `create_page`, `update_page`, `append_to_page`, `restore_page_version`, `archive_page` |
+   | `list_projects`, `get_project`, `list_issues`, `get_issue`, `search`, `next_work`, `list_cycles`, `list_modules`, `list_milestones`, `list_epics`, `list_properties`, `list_members`, `list_pages`, `get_page`, `search_pages`, `list_page_versions` | `create_issue`, `update_issue`, `set_state`, `complete_issue`, `add_comment`, `log_progress`, `add_link` (commit/PR/evidencia), `add_relation`, `archive_issue`, `create_cycle`, `create_module`, `create_milestone`, `create_property`, `create_member`, `assign_issue`, `create_page`, `update_page`, `append_to_page`, `restore_page_version`, `archive_page` |
 
 **Docs**: las páginas son Markdown (editor con vista previa; sin editor WYSIWYG a propósito: el texto plano es lo que mejor
 leen y escriben los agentes). `FICH-12`, `[[FICH-12]]` y `[[Título]]` crean enlaces bidireccionales (el issue muestra «Mencionado
@@ -68,6 +68,14 @@ actor `agent:<token>`.
 canceladas y archivadas no cuentan). Se crean desde la página, o se convierte cualquier issue desde su ficha (campo Tipo).
 Para agentes: `create_issue` con `type: "epic"`, `parent` para añadir trabajo, `list_epics` para ver el progreso y
 `get_issue` devuelve `childProgress`. `next_work` nunca propone épicas, solo el trabajo concreto.
+
+**Miembros y asignados** (`/settings/members`, enlace «Miembros» en la barra lateral): personas y agentes del workspace
+(existe uno inicial, «Yo»). Se asigna desde la ficha, la tabla (editable en la celda) y se ve como avatar en lista y
+Kanban; el filtro «Asignado» admite «Sin asignar» y varios miembros a la vez (`assignee=<id>,none` en la URL). Los
+nombres son únicos. Borrar un miembro solo se hace desde la interfaz, con confirmación, y deja sus issues sin asignar.
+Para agentes: `list_members`, `create_member` (un agente puede darse de alta para asignarse trabajo), `assignee` por
+nombre en `create_issue`/`update_issue` (`null` desasigna), `assignee` en `list_issues` y `next_work`. Los cambios quedan
+en la actividad con el nombre. El importador de Plane descartó los asignados originales.
 
 **Propiedades personalizadas** (Ajustes → «Propiedades personalizadas»): campos propios por proyecto de tipo texto,
 número, fecha o selección. Aparecen en la ficha y como columnas de la tabla (ordenables); las de selección también como

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { IssueWorkspace } from "@/components/issues/issue-workspace";
-import { toIssueDTO, toPropertyDTO, toStateDTO } from "@/server/dto";
+import { toIssueDTO, toMemberDTO, toPropertyDTO, toStateDTO } from "@/server/dto";
+import { listMembers } from "@/server/services/workspace";
 import { listPropertyDefs } from "@/server/services/properties";
 import { listLabels } from "@/server/services/labels";
 import { listCycles, listModules } from "@/server/services/planning";
@@ -25,7 +26,7 @@ export default async function ProjectViewPage({
     if (e instanceof ServiceError && e.code === "not_found") notFound();
     throw e;
   });
-  const [states, issues, labels, cycles, modules, views, properties] = await Promise.all([
+  const [states, issues, labels, cycles, modules, views, properties, members] = await Promise.all([
     listStates(project.id),
     listIssues({ projectId: project.id }),
     listLabels(project.id),
@@ -33,6 +34,7 @@ export default async function ProjectViewPage({
     listModules(project.id),
     listViews(project.id),
     listPropertyDefs(project.id),
+    listMembers(),
   ]);
   return (
     <IssueWorkspace
@@ -43,6 +45,7 @@ export default async function ProjectViewPage({
       labels={labels.map((l) => ({ id: l.id, name: l.name, color: l.color }))}
       cycles={cycles.map((c) => ({ id: c.id, name: c.name }))}
       modules={modules.map((m) => ({ id: m.id, name: m.name }))}
+      members={members.map(toMemberDTO)}
       properties={properties.map(toPropertyDTO)}
       views={views.map((v) => ({ id: v.id, name: v.name, layout: v.layout, query: v.query }))}
       initialIssues={issues.map((i) => toIssueDTO(i, project.identifier))}

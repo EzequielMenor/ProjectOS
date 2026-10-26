@@ -6,7 +6,8 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ChevronRight, ExternalLink, FileText, X } from "lucide-react";
 import { PRIORITIES, type IssueType, type Priority, type StateGroup } from "@/db/schema";
-import type { PropertyDTO, StateDTO } from "@/server/dto";
+import type { MemberDTO, PropertyDTO, StateDTO } from "@/server/dto";
+import { MemberAvatar } from "@/components/member-avatar";
 import {
   addCommentAction,
   addRelationAction,
@@ -32,6 +33,7 @@ type Detail = {
   description: string;
   stateId: string;
   priority: Priority;
+  assigneeId: string | null;
   cycleId: string | null;
   milestoneId: string | null;
   moduleIds: string[];
@@ -74,7 +76,7 @@ function describe(a: Activity): string {
     const ch = (a.data.changes ?? {}) as Record<string, { from: unknown; to: unknown }>;
     const parts = Object.entries(ch).map(([k, v]) => {
       if (k.startsWith("property:")) return `cambió «${k.slice("property:".length)}»: ${String(v.from ?? "—")} → ${String(v.to ?? "—")}`;
-      const name = ({ stateId: "estado", priority: "prioridad", title: "título", description: "descripción", labels: "etiquetas", parentId: "padre", dueDate: "fecha límite", estimate: "estimación" } as Record<string, string>)[k] ?? k;
+      const name = ({ stateId: "estado", priority: "prioridad", assignee: "asignado a", title: "título", description: "descripción", labels: "etiquetas", parentId: "padre", dueDate: "fecha límite", estimate: "estimación" } as Record<string, string>)[k] ?? k;
       return k === "description" || k === "title" || k === "labels" ? `cambió ${name}` : `cambió ${name}: ${String(v.from ?? "—")} → ${String(v.to ?? "—")}`;
     });
     return parts.join(", ") || "actualizó el issue";
@@ -131,7 +133,9 @@ export function IssueDetail({
   candidates,
   mentions,
   propertyDefs,
+  members,
 }: {
+  members: MemberDTO[];
   issue: Detail;
   propertyDefs: PropertyDTO[];
   states: StateDTO[];
@@ -147,6 +151,7 @@ export function IssueDetail({
   const [description, setDescription] = useState(issue.description);
   const [comment, setComment] = useState("");
   const state = states.find((s) => s.id === issue.stateId)!;
+  const assignee = members.find((m) => m.id === issue.assigneeId);
 
   const save = (patch: Record<string, unknown>) =>
     start(async () => {
@@ -401,6 +406,19 @@ export function IssueDetail({
               <span className="ml-auto flex items-center gap-1.5">
                 <PriorityIcon priority={issue.priority} />
                 {PRIORITY_LABEL[issue.priority]}
+              </span>
+            </OptionPicker>
+            <OptionPicker
+              title="Asignado"
+              value={issue.assigneeId ?? NONE}
+              onChange={(v) => save({ assigneeId: v === NONE ? null : v })}
+              options={[{ value: NONE, label: "Sin asignar" }, ...members.map((m) => ({ value: m.id, label: m.name, icon: <MemberAvatar member={m} decorative className="size-4 text-[0.625rem]" /> }))]}
+              className="w-full"
+            >
+              <span className="text-muted-foreground">Asignado</span>
+              <span className="ml-auto flex items-center gap-1.5">
+                {assignee ? <MemberAvatar member={assignee} decorative className="size-4 text-[0.625rem]" /> : null}
+                {assignee ? assignee.name : "—"}
               </span>
             </OptionPicker>
             <OptionPicker

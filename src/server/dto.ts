@@ -24,6 +24,8 @@ export type IssueDTO = {
   properties: Record<string, string | number>;
   pending?: boolean;
 };
+export type MemberDTO = { id: string; name: string; kind: "human" | "agent" };
+export const toMemberDTO = (m: MemberDTO): MemberDTO => ({ id: m.id, name: m.name, kind: m.kind });
 export type PropertyDTO = { id: string; name: string; type: PropertyType; options: string[] };
 
 type IssueRowLike = {

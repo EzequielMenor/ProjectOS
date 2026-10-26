@@ -22,13 +22,15 @@ import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { LayoutList, Columns3, Plus, Table2, ArrowDown, ArrowUp } from "lucide-react";
 import { PRIORITIES, type Priority } from "@/db/schema";
-import type { IssueDTO, LabelDTO, PropertyDTO, StateDTO } from "@/server/dto";
+import type { IssueDTO, LabelDTO, MemberDTO, PropertyDTO, StateDTO } from "@/server/dto";
 import { applyFilters, parseFilters, serializeFilters, type Filters } from "@/lib/issue-filters";
 import { FilterBar, type SavedViewDTO } from "./filter-bar";
 import { createIssueAction, moveIssueAction, updateIssueAction } from "@/app/actions";
 import { EpicBadge, PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
 import { cn } from "@/lib/utils";
 import { OptionPicker } from "./option-picker";
+import { MembersProvider, useMemberById, useMembers } from "./members-context";
+import { MemberAvatar } from "@/components/member-avatar";
 
 type Project = { id: string; identifier: string; name: string };
 type View = "list" | "board" | "table";
@@ -60,9 +62,11 @@ export function IssueWorkspace({
   labels,
   cycles,
   modules,
+  members,
   properties,
   views,
 }: {
+  members: MemberDTO[];
   properties: PropertyDTO[];
   project: Project;
   states: StateDTO[];
@@ -151,6 +155,8 @@ export function IssueWorkspace({
     mutate({ type: "patch", id, patch: { priority } }, () => updateIssueAction(id, { priority }));
   const setState = (id: string, stateId: string) =>
     mutate({ type: "patch", id, patch: { stateId } }, () => updateIssueAction(id, { stateId }));
+  const setAssignee = (id: string, assigneeId: string | null) =>
+    mutate({ type: "patch", id, patch: { assigneeId } }, () => updateIssueAction(id, { assigneeId }));
 
   // Keyboard: j/k move, Enter opens, c creates, l/b/t switch view.
   useEffect(() => {
@@ -180,6 +186,7 @@ export function IssueWorkspace({
   }, [flat, selected, router, project.identifier, defaultStateId]);
 
   return (
+    <MembersProvider members={members}>
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex h-12 shrink-0 items-center gap-3 border-b px-4">
         <span className="size-2.5 rounded-sm" style={{ background: "var(--primary)" }} aria-hidden />
@@ -198,10 +205,10 @@ export function IssueWorkspace({
           <Plus className="size-3.5" /> <span className="hidden sm:inline">Nuevo issue</span> <kbd className="ml-1 hidden rounded bg-white/20 px-1 text-[0.75rem] sm:inline">C</kbd>
         </button>
       </header>
-      <FilterBar filters={filters} onChange={setFilters} states={states} labels={labels} cycles={cycles} modules={modules} properties={properties} views={views} project={project} layout={view} />
+      <FilterBar filters={filters} onChange={setFilters} states={states} labels={labels} cycles={cycles} modules={modules} members={members} properties={properties} views={views} project={project} layout={view} />
       <div className="min-h-0 flex-1 overflow-auto">
         {view === "table" ? (
-          <TableView issues={visible} total={issues.length} project={project} states={states} cycles={cycles} properties={properties} onPriority={setPriority} onState={setState} onClear={() => setFilters(parseFilters(new URLSearchParams()))} />
+          <TableView issues={visible} total={issues.length} project={project} states={states} cycles={cycles} properties={properties} onPriority={setPriority} onState={setState} onAssignee={setAssignee} onClear={() => setFilters(parseFilters(new URLSearchParams()))} />
         ) : view === "list" ? (
           <ListView
             columns={columns}
@@ -235,10 +242,12 @@ export function IssueWorkspace({
         )}
       </div>
     </div>
+    </MembersProvider>
   );
 }
 
-type SortKey = "key" | "title" | "state" | "priority" | "due" | "estimate" | `prop:${string}`;
+type SortKey = "key" | "title" | "state" | "priority" | "assignee" | "due" | "estimate" | `prop:${string}`;
+const NONE_MEMBER = "__none";
 const PRIORITY_RANK: Record<Priority, number> = { urgent: 0, high: 1, medium: 2, low: 3, none: 4 };
 
 type Sort = { key: SortKey; dir: 1 | -1 };
@@ -259,7 +268,7 @@ function Th({ k, sort, onSort, children, className }: { k?: SortKey; sort: Sort;
 }
 
 function TableView({
-  issues, total, project, states, cycles, properties, onPriority, onState, onClear,
+  issues, total, project, states, cycles, properties, onPriority, onState, onAssignee, onClear,
 }: {
   properties: PropertyDTO[];
   issues: IssueDTO[];
@@ -269,11 +278,14 @@ function TableView({
   cycles: Named[];
   onPriority: (id: string, p: Priority) => void;
   onState: (id: string, s: string) => void;
+  onAssignee: (id: string, memberId: string | null) => void;
   onClear: () => void;
 }) {
   const [sort, setSort] = useState<Sort>({ key: "key", dir: -1 });
   const stateById = useMemo(() => new Map(states.map((s) => [s.id, s])), [states]);
   const cycleName = useMemo(() => new Map(cycles.map((c) => [c.id, c.name])), [cycles]);
+  const members = useMembers();
+  const memberById = useMemberById();
   const rows = useMemo(() => {
     const val = (i: IssueDTO): string | number => {
       switch (sort.key) {
@@ -281,6 +293,7 @@ function TableView({
         case "title": return i.title.toLowerCase();
         case "state": return stateById.get(i.stateId)?.position ?? 0;
         case "priority": return PRIORITY_RANK[i.priority];
+        case "assignee": return (i.assigneeId ? memberById.get(i.assigneeId)?.name.toLowerCase() : undefined) ?? "";
         case "due": return i.dueDate ?? "9999";
         case "estimate": return i.estimate ?? -1;
         default: {
@@ -292,7 +305,7 @@ function TableView({
       }
     };
     return [...issues].sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sort.dir);
-  }, [issues, sort, stateById, properties]);
+  }, [issues, sort, stateById, memberById, properties]);
 
   if (rows.length === 0)
     return (
@@ -314,6 +327,7 @@ function TableView({
           <Th sort={sort} onSort={setSort} k="key" className="w-24">Clave</Th>
           <Th sort={sort} onSort={setSort} k="title">Título</Th>
           <Th sort={sort} onSort={setSort} k="state" className="w-36">Estado</Th>
+          <Th sort={sort} onSort={setSort} k="assignee" className="w-36">Asignado</Th>
           <Th sort={sort} onSort={setSort}>Etiquetas</Th>
           <Th sort={sort} onSort={setSort} className="w-32">Ciclo</Th>
           <Th sort={sort} onSort={setSort} k="due" className="w-28">Límite</Th>
@@ -351,6 +365,23 @@ function TableView({
                 >
                   <StateIcon group={st.group} color={st.color} />
                   <span className="text-xs">{st.name}</span>
+                </OptionPicker>
+              </td>
+              <td className="px-3" data-cell="assignee">
+                <OptionPicker
+                  title="Asignado"
+                  value={i.assigneeId ?? NONE_MEMBER}
+                  onChange={(v) => onAssignee(i.id, v === NONE_MEMBER ? null : v)}
+                  options={[{ value: NONE_MEMBER, label: "Sin asignar" }, ...members.map((m) => ({ value: m.id, label: m.name, icon: <MemberAvatar member={m} decorative className="size-4 text-[0.625rem]" /> }))]}
+                >
+                  {i.assigneeId && memberById.get(i.assigneeId) ? (
+                    <>
+                      <MemberAvatar member={memberById.get(i.assigneeId)!} decorative className="size-4 text-[0.625rem]" />
+                      <span className="max-w-24 truncate text-xs">{memberById.get(i.assigneeId)!.name}</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </OptionPicker>
               </td>
               <td className="px-3">
@@ -506,6 +537,7 @@ function ListView({
                   {l.name}
                 </span>
               ))}
+              <AssigneeAvatar id={issue.assigneeId} />
             </div>
           ))}
         </section>
@@ -665,6 +697,7 @@ function Card({ issue, href, selected, overlay }: { issue: IssueDTO; href?: stri
         <span className="font-mono text-[0.8125rem] text-muted-foreground tabular-nums">{issue.key}</span>
         <EpicBadge type={issue.type} />
         <PriorityIcon priority={issue.priority} className="ml-auto" />
+        <AssigneeAvatar id={issue.assigneeId} />
       </div>
       <p className="line-clamp-3 leading-snug">{issue.title}</p>
       {issue.labels.length ? (
@@ -680,4 +713,11 @@ function Card({ issue, href, selected, overlay }: { issue: IssueDTO; href?: stri
     </div>
   );
   return href ? <Link href={href} draggable={false} className="block outline-none">{body}</Link> : body;
+}
+
+/** Small avatar for the assignee of a row or card; renders nothing when unassigned. */
+function AssigneeAvatar({ id }: { id: string | null }) {
+  const byId = useMemberById();
+  const m = id ? byId.get(id) : undefined;
+  return m ? <MemberAvatar member={m} /> : null;
 }

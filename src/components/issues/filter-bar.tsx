@@ -10,7 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
 import { activeCount, EMPTY_FILTERS, serializeFilters, type Filters } from "@/lib/issue-filters";
-import type { LabelDTO, PropertyDTO, StateDTO } from "@/server/dto";
+import { NO_ASSIGNEE } from "@/lib/issue-filters";
+import { MemberAvatar } from "@/components/member-avatar";
+import type { LabelDTO, MemberDTO, PropertyDTO, StateDTO } from "@/server/dto";
 import { cn } from "@/lib/utils";
 
 type Named = { id: string; name: string };
@@ -23,12 +25,14 @@ export function FilterBar({
   labels,
   cycles,
   modules,
+  members,
   properties,
   views,
   project,
   layout,
 }: {
   properties: PropertyDTO[];
+  members: MemberDTO[];
   filters: Filters;
   onChange: (f: Filters) => void;
   states: StateDTO[];
@@ -40,7 +44,7 @@ export function FilterBar({
   layout: ViewLayout;
 }) {
   const n = activeCount(filters);
-  const toggle = <K extends "state" | "priority" | "label" | "cycle" | "module">(key: K, value: Filters[K][number]) => {
+  const toggle = <K extends "state" | "assignee" | "priority" | "label" | "cycle" | "module">(key: K, value: Filters[K][number]) => {
     const cur = filters[key] as string[];
     onChange({ ...filters, [key]: cur.includes(value as string) ? cur.filter((x) => x !== value) : [...cur, value] });
   };
@@ -62,6 +66,15 @@ export function FilterBar({
         selected={filters.state}
         onToggle={(v) => toggle("state", v)}
         options={states.map((s) => ({ value: s.id, label: s.name, icon: <StateIcon group={s.group} color={s.color} /> }))}
+      />
+      <MultiFilter
+        title="Asignado"
+        selected={filters.assignee}
+        onToggle={(v) => toggle("assignee", v)}
+        options={[
+          { value: NO_ASSIGNEE, label: "Sin asignar" },
+          ...members.map((m) => ({ value: m.id, label: m.name, icon: <MemberAvatar member={m} decorative className="size-4 text-[0.625rem]" /> })),
+        ]}
       />
       <MultiFilter
         title="Prioridad"

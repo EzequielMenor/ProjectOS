@@ -32,6 +32,7 @@ import {
 } from "../services/pages";
 import type { AuthContext } from "../services/tokens";
 import { listRelations, nextWork } from "../services/work";
+import { createMember, findMemberByName, listMembersWithCounts } from "../services/members";
 import { coerceValue, createPropertyDef, listPropertyDefs, resolvePropertyInputs, type PropInput } from "../services/properties";
 
 /**
@@ -156,6 +157,13 @@ export const TOOLS: ToolDef[] = [
     },
   }),
   tool({
+    name: "list_members",
+    description: "List the workspace members (people and agents) that issues can be assigned to, with how many issues each holds.",
+    scope: "read",
+    shape: {},
+    run: async () => (await listMembersWithCounts()).map((m) => ({ name: m.name, kind: m.kind, issues: m.issues })),
+  }),
+  tool({
     name: "list_issues",
     description: "List issues with optional filters. Returns compact summaries ordered by board position.",
     scope: "read",
@@ -165,6 +173,7 @@ export const TOOLS: ToolDef[] = [
       stateGroup: z.enum(STATE_GROUPS).optional(),
       priority: z.enum(PRIORITIES).optional(),
       type: z.enum(ISSUE_TYPES).optional(),
+      assignee: z.string().optional().describe("Member name (see list_members)"),
       query: z.string().optional().describe("Text in title or description"),
       property: z.string().optional().describe("Custom property name to filter by (requires 'project' and 'propertyValue')"),
       propertyValue: z.union([z.string(), z.number()]).optional().describe("Exact value the property must have"),
@@ -195,6 +204,7 @@ export const TOOLS: ToolDef[] = [
         stateGroup: a.stateGroup,
         priority: a.priority,
         type: a.type,
+        assigneeId: a.assignee ? (await findMemberByName(a.assignee)).id : undefined,
         query: a.query,
         parentId,
         includeArchived: a.includeArchived,
@@ -307,10 +317,14 @@ export const TOOLS: ToolDef[] = [
     description:
       "What to work on next: open, unblocked issues (epics excluded), started ones first, then by priority and board order.",
     scope: "read",
-    shape: { project: projectArg.optional(), limit: z.number().int().min(1).max(20).default(5) },
-    run: async ({ project: id, limit }) => {
+    shape: {
+      project: projectArg.optional(),
+      assignee: z.string().optional().describe("Only issues assigned to this member (see list_members)"),
+      limit: z.number().int().min(1).max(20).default(5),
+    },
+    run: async ({ project: id, assignee, limit }) => {
       const p = id ? await project(id) : null;
-      const rows = await nextWork({ projectId: p?.id, limit });
+      const rows = await nextWork({ projectId: p?.id, assigneeId: assignee ? (await findMemberByName(assignee)).id : undefined, limit });
       return rows.map((r) => summary(r, r.project.identifier));
     },
   }),
@@ -358,6 +372,7 @@ export const TOOLS: ToolDef[] = [
       priority: z.enum(PRIORITIES).optional(),
       type: z.enum(ISSUE_TYPES).optional(),
       parent: key.optional(),
+      assignee: z.string().optional().describe("Member name (see list_members)"),
       estimate: z.number().int().min(0).optional(),
       startDate: z.string().optional().describe("YYYY-MM-DD"),
       dueDate: z.string().optional().describe("YYYY-MM-DD"),
@@ -375,6 +390,7 @@ export const TOOLS: ToolDef[] = [
           priority: a.priority,
           type: a.type,
           parentId: a.parent ? (await getIssueByKey(a.parent)).id : undefined,
+          assigneeId: a.assignee ? (await findMemberByName(a.assignee)).id : undefined,
           estimate: a.estimate,
           startDate: a.startDate,
           dueDate: a.dueDate,
@@ -389,7 +405,7 @@ export const TOOLS: ToolDef[] = [
   tool({
     name: "update_issue",
     description:
-      "Update fields of an issue (title, description, priority, estimate, dates, labels, parent). Previous values are kept in the activity log. To change state use set_state or complete_issue.",
+      "Update fields of an issue (title, description, priority, assignee, estimate, dates, labels, parent). Previous values are kept in the activity log. To change state use set_state or complete_issue.",
     scope: "write",
     shape: {
       key,
@@ -398,18 +414,20 @@ export const TOOLS: ToolDef[] = [
       priority: z.enum(PRIORITIES).optional(),
       type: z.enum(ISSUE_TYPES).optional(),
       parent: key.nullable().optional().describe("Parent key, or null to detach"),
+      assignee: z.string().nullable().optional().describe("Member name (see list_members), or null to unassign"),
       estimate: z.number().int().min(0).nullable().optional(),
       startDate: z.string().nullable().optional(),
       dueDate: z.string().nullable().optional(),
       labels: z.array(z.string()).optional().describe("Replaces the full label set"),
       properties: propertiesArg.optional().describe("Only the listed properties change; use null to clear one"),
     },
-    run: async ({ key: k, parent, labels, properties, ...rest }, ctx) => {
+    run: async ({ key: k, parent, assignee, labels, properties, ...rest }, ctx) => {
       const i = await getIssueByKey(k);
       await updateIssue(
         i.id,
         {
           ...rest,
+          ...(assignee !== undefined ? { assigneeId: assignee ? (await findMemberByName(assignee)).id : null } : {}),
           ...(parent !== undefined ? { parentId: parent ? (await getIssueByKey(parent)).id : null } : {}),
           ...(labels ? { labelIds: await resolveLabelIds(i.projectId, labels) } : {}),
           ...(properties ? { properties: await resolvePropertyInputs(i.projectId, properties as Record<string, PropInput>) } : {}),
@@ -538,6 +556,16 @@ export const TOOLS: ToolDef[] = [
       const p = await project(id);
       const created = await createPropertyDef({ projectId: p.id, ...rest }, ctx.actor);
       return { name: created.name, type: created.type, options: created.type === "select" ? created.options : undefined };
+    },
+  }),
+  tool({
+    name: "create_member",
+    description: "Register a person or an agent so issues can be assigned to it (e.g. your own name, kind 'agent'). Names are unique. Members cannot be deleted through the API.",
+    scope: "write",
+    shape: { name: z.string().min(1).max(50), kind: z.enum(["human", "agent"]).default("agent") },
+    run: async (a) => {
+      const created = await createMember({ name: a.name, kind: a.kind });
+      return { name: created.name, kind: created.kind };
     },
   }),
   tool({

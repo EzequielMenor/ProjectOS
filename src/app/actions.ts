@@ -9,6 +9,7 @@ import { ensureLabel } from "@/server/services/labels";
 import { createPage, restorePageVersion, searchPages, setPageArchived, updatePage } from "@/server/services/pages";
 import { createView, deleteView } from "@/server/services/views";
 import { createProject, listProjects, updateProject } from "@/server/services/projects";
+import { createMember, deleteMember, updateMember } from "@/server/services/members";
 import { createPropertyDef, deletePropertyDef, updatePropertyDef } from "@/server/services/properties";
 import { createState, deleteState, moveState, setDefaultState, updateState } from "@/server/services/states";
 import { createToken, revokeToken } from "@/server/services/tokens";
@@ -224,4 +225,18 @@ export async function updatePropertyAction(id: string, patch: unknown) {
 }
 export async function deletePropertyAction(id: string) {
   return run(async () => deletePropertyDef(id));
+}
+
+export async function createMemberAction(input: unknown) {
+  return run(async () => {
+    await createMember(input);
+  });
+}
+export async function renameMemberAction(id: string, input: unknown) {
+  return run(async () => {
+    await updateMember(id, input);
+  });
+}
+export async function deleteMemberAction(id: string) {
+  return run(async () => deleteMember(id));
 }

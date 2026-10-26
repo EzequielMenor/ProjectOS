@@ -8,6 +8,7 @@ import {
   issueLink,
   issuePropertyValue,
   issueRelation,
+  member,
   project,
   state,
 } from "@/db/schema";
@@ -21,6 +22,7 @@ import {
   moveIssueInput,
   updateIssueInput,
 } from "../schemas";
+import { assertMember } from "./members";
 import { applyPropertyValues } from "./properties";
 
 const issueWith = {
@@ -199,6 +201,7 @@ export async function createIssue(raw: unknown, actor = "user") {
       stateId = first.id;
     }
     if (input.parentId) await assertParent(tx, input.parentId, input.projectId);
+    if (input.assigneeId) await assertMember(tx, input.assigneeId);
 
     // new issues go to the top of their column
     const [{ min }] = await tx
@@ -250,11 +253,19 @@ export async function updateIssue(id: string, raw: unknown, actor = "user") {
       patch.completedAt = s.group === "completed" ? new Date() : null;
     }
     if (fields.parentId) await assertParent(tx, fields.parentId, before.projectId, id);
+    if (fields.assigneeId) await assertMember(tx, fields.assigneeId);
 
     const changes: Record<string, { from: unknown; to: unknown }> = {};
     for (const [k, v] of Object.entries(fields)) {
       const prev = (before as Record<string, unknown>)[k];
       if (v !== undefined && prev !== v) changes[k] = { from: prev, to: v };
+    }
+    if (changes.assigneeId) {
+      // the log keeps names, not ids: a member may be deleted later
+      const { from, to } = changes.assigneeId as { from: string | null; to: string | null };
+      const nameOf = async (mid: string | null) => (mid ? ((await tx.query.member.findFirst({ where: eq(member.id, mid), columns: { name: true } }))?.name ?? null) : null);
+      delete changes.assigneeId;
+      changes.assignee = { from: await nameOf(from), to: await nameOf(to) };
     }
     if (labelIds) {
       await setLabels(tx, id, before.projectId, labelIds);

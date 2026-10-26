@@ -7,6 +7,8 @@ import type { IssueDTO } from "@/server/dto";
  */
 export type Filters = {
   state: string[];
+  /** Member ids, plus `NO_ASSIGNEE` for issues nobody holds. */
+  assignee: string[];
   priority: Priority[];
   label: string[];
   cycle: string[];
@@ -14,9 +16,10 @@ export type Filters = {
   prop: Record<string, string[]>;
   q: string;
 };
-export const EMPTY_FILTERS: Filters = { state: [], priority: [], label: [], cycle: [], module: [], prop: {}, q: "" };
+export const NO_ASSIGNEE = "none";
+export const EMPTY_FILTERS: Filters = { state: [], assignee: [], priority: [], label: [], cycle: [], module: [], prop: {}, q: "" };
 
-const LIST_KEYS = ["state", "priority", "label", "cycle", "module"] as const;
+const LIST_KEYS = ["state", "assignee", "priority", "label", "cycle", "module"] as const;
 const PROP_PREFIX = "p.";
 
 export function parseFilters(params: URLSearchParams | { get(k: string): string | null; entries?: () => IterableIterator<[string, string]> }): Filters {
@@ -30,6 +33,7 @@ export function parseFilters(params: URLSearchParams | { get(k: string): string 
   }
   return {
     state: list("state"),
+    assignee: list("assignee"),
     priority: list("priority") as Priority[],
     label: list("label"),
     cycle: list("cycle"),
@@ -56,6 +60,7 @@ export function applyFilters(issues: IssueDTO[], f: Filters): IssueDTO[] {
   return issues.filter(
     (i) =>
       (!f.state.length || f.state.includes(i.stateId)) &&
+      (!f.assignee.length || f.assignee.includes(i.assigneeId ?? NO_ASSIGNEE)) &&
       (!f.priority.length || f.priority.includes(i.priority)) &&
       (!f.label.length || i.labels.some((l) => f.label.includes(l.id))) &&
       (!f.cycle.length || (i.cycleId !== null && f.cycle.includes(i.cycleId))) &&

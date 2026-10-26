@@ -5,7 +5,7 @@ import { useParams, usePathname } from "next/navigation";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useTheme } from "next-themes";
 import { useState } from "react";
-import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, Layers, LayoutList, Menu, Moon, Plus, Search, Settings, Sun, Table2, X } from "lucide-react";
+import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, Layers, LayoutList, Menu, Moon, Plus, Search, Settings, Sun, Table2, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OPEN_PALETTE, PaletteButton } from "@/components/command-palette";
 import { TextSizeControl } from "@/components/text-size-control";
@@ -126,6 +126,7 @@ function SidebarBody({ projects, uiSize }: SidebarProps) {
         })}
       </nav>
       <div className="border-t p-2">
+        <SubLink href="/settings/members" icon={<Users className="size-3.5" />} label="Miembros" active={pathname.startsWith("/settings/members")} />
         <SubLink href="/settings/tokens" icon={<KeyRound className="size-3.5" />} label="Tokens de API" active={pathname.startsWith("/settings/tokens")} />
         <SubLink href="/settings/backup" icon={<DatabaseBackup className="size-3.5" />} label="Copias de seguridad" active={pathname.startsWith("/settings/backup")} />
         <TextSizeControl initial={uiSize} />

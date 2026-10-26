@@ -46,12 +46,28 @@ for (const theme of ["light", "dark"] as const) {
     await page.getByRole("complementary", { name: "Propiedades" }).getByLabel("Horas").press("Enter");
     await expect(page.getByText("cambió «Horas»")).toBeVisible();
 
+    // members: one person and one agent, each holding an issue, so avatars are audited on rows, cards and the table
+    await page.goto("/settings/members");
+    const members = page.getByRole("region", { name: "Miembros" });
+    for (const [name, kind] of [[`Persona ${theme}`, "human"], [`Agente ${theme}`, "agent"]]) {
+      await members.getByLabel("Nombre del nuevo miembro").fill(name);
+      await members.getByLabel("Tipo del nuevo miembro").selectOption(kind);
+      await members.getByRole("button", { name: "Añadir" }).click();
+      await expect(members.getByLabel(`Nombre de ${name}`)).toBeVisible();
+    }
+    for (const [n, name] of [[1, `Agente ${theme}`], [2, `Persona ${theme}`]] as const) {
+      await page.goto(`/${key}/issues/${n}`);
+      await page.getByRole("complementary", { name: "Propiedades" }).getByRole("button", { name: "Asignado" }).click();
+      await page.getByRole("option", { name, exact: true }).click();
+      await expect(page.getByRole("complementary", { name: "Propiedades" }).getByRole("button", { name: "Asignado" })).toContainText(name);
+    }
+
     for (const path of ["list", "board", "table", "epics", "cycles", "modules", "milestones", "roadmap", "pages", "settings", "issues/1", "issues/2"]) {
       await page.goto(`/${key}/${path}`);
       await page.waitForLoadState("networkidle");
       await audit(page, path);
     }
-    for (const path of ["/settings/tokens", "/settings/backup"]) {
+    for (const path of ["/settings/members", "/settings/tokens", "/settings/backup"]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       await audit(page, path);
@@ -66,6 +82,11 @@ for (const theme of ["light", "dark"] as const) {
     await page.getByRole("button", { name: "Estado" }).first().click(); // the filter bar comes before the rows' own state pickers
     await expect(page.locator("[data-slot=popover-content]")).toBeVisible();
     await audit(page, "filtro de estado");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("[data-slot=popover-content]")).toHaveCount(0); // exit animation done
+    await page.getByRole("button", { name: "Filtrar por asignado" }).click();
+    await expect(page.locator("[data-slot=popover-content]")).toBeVisible();
+    await audit(page, "filtro de asignado");
 
     // 404 inside the app shell
     await page.goto(`/${key}/issues/999`);
