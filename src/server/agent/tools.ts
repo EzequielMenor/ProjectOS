@@ -17,6 +17,18 @@ import {
 import { listLabels, resolveLabelIds } from "../services/labels";
 import { assignIssue, createCycle, createMilestone, createModule, listCycles, listMilestones, listModules } from "../services/planning";
 import { getProjectByIdentifier, listProjects, listStates } from "../services/projects";
+import {
+  appendToPage,
+  createPage,
+  getPageByRef,
+  listPages,
+  listPageVersions,
+  pageLinks,
+  restorePageVersion,
+  searchPages,
+  setPageArchived,
+  updatePage,
+} from "../services/pages";
 import type { AuthContext } from "../services/tokens";
 import { listRelations, nextWork } from "../services/work";
 
@@ -186,6 +198,54 @@ export const TOOLS: ToolDef[] = [
     run: async ({ query, limit }) => {
       const rows = await searchIssues(query, limit);
       return rows.map((r) => summary(r, r.project.identifier));
+    },
+  }),
+  tool({
+    name: "list_pages",
+    description: "List a project's Markdown pages (docs), most recently updated first. Content is not included; use get_page.",
+    scope: "read",
+    shape: { project: projectArg, includeArchived: z.boolean().optional() },
+    run: async ({ project: id, includeArchived }) => {
+      const p = await project(id);
+      return (await listPages(p.id, { includeArchived })).map((x) => ({ id: x.id, title: x.title, updatedAt: x.updatedAt.toISOString(), archived: !!x.archivedAt }));
+    },
+  }),
+  tool({
+    name: "get_page",
+    description:
+      "Read a page by id or exact title: Markdown content, updatedAt (pass it back as expectedUpdatedAt to update_page), issues it mentions, and pages that link to it.",
+    scope: "read",
+    shape: { project: projectArg, page: z.string().describe("Page id or exact title") },
+    run: async ({ project: id, page: ref }) => {
+      const pg = await getPageByRef(id, ref);
+      const links = await pageLinks(pg.id);
+      return {
+        id: pg.id,
+        title: pg.title,
+        content: pg.content,
+        updatedAt: pg.updatedAt.toISOString(),
+        archived: !!pg.archivedAt,
+        mentionsIssues: links.issues.map((i) => issueKey(i.identifier, i.seq)),
+        linksTo: links.outgoing.map((x) => x.title),
+        linkedFrom: links.backlinks.map((x) => x.title),
+      };
+    },
+  }),
+  tool({
+    name: "search_pages",
+    description: "Search pages by text in title or content, across all projects.",
+    scope: "read",
+    shape: { query: z.string().min(1), limit: z.number().int().min(1).max(30).default(10) },
+    run: async ({ query, limit }) => (await searchPages(query, limit)).map((x) => ({ id: x.id, projectId: x.projectId, title: x.title, updatedAt: x.updatedAt.toISOString() })),
+  }),
+  tool({
+    name: "list_page_versions",
+    description: "History of a page: every previous version is kept. Use restore_page_version to go back.",
+    scope: "read",
+    shape: { project: projectArg, page: z.string() },
+    run: async ({ project: id, page: ref }) => {
+      const pg = await getPageByRef(id, ref);
+      return (await listPageVersions(pg.id)).map((v) => ({ id: v.id, title: v.title, by: v.actor, at: v.createdAt.toISOString(), chars: v.content.length }));
     },
   }),
   tool({
@@ -439,6 +499,69 @@ export const TOOLS: ToolDef[] = [
       const i = await getIssueByKey(k);
       await setIssueArchived(i.id, archived, ctx.actor);
       return { key: k, archived };
+    },
+  }),
+  tool({
+    name: "create_page",
+    description:
+      "Create a Markdown page (doc) in a project. Reference issues as FICH-12 or [[FICH-12]] and other pages as [[Page title]]; they become bidirectional links.",
+    scope: "write",
+    shape: { project: projectArg, title: z.string().min(1), content: z.string().default("") },
+    run: async ({ project: id, title, content }, ctx) => {
+      const p = await project(id);
+      const pg = await createPage({ projectId: p.id, title, content }, ctx.actor);
+      return { id: pg.id, title: pg.title, updatedAt: pg.updatedAt.toISOString() };
+    },
+  }),
+  tool({
+    name: "update_page",
+    description:
+      "Replace a page's title and/or content. Requires expectedUpdatedAt from get_page so you cannot overwrite changes you have not seen. The previous version is always kept (see list_page_versions). Prefer append_to_page to add text.",
+    scope: "write",
+    shape: {
+      project: projectArg,
+      page: z.string(),
+      expectedUpdatedAt: z.string().describe("updatedAt returned by get_page"),
+      title: z.string().min(1).optional(),
+      content: z.string().optional(),
+    },
+    run: async ({ project: id, page: ref, expectedUpdatedAt, title, content }, ctx) => {
+      const pg = await getPageByRef(id, ref);
+      const u = await updatePage(pg.id, { expectedUpdatedAt, title, content }, ctx.actor);
+      return { id: u.id, title: u.title, updatedAt: u.updatedAt.toISOString() };
+    },
+  }),
+  tool({
+    name: "append_to_page",
+    description: "Append Markdown to the end of a page without touching existing text. Safe for logs, decisions and notes.",
+    scope: "write",
+    shape: { project: projectArg, page: z.string(), text: z.string().min(1) },
+    run: async ({ project: id, page: ref, text }, ctx) => {
+      const pg = await getPageByRef(id, ref);
+      const u = await appendToPage(pg.id, text, ctx.actor);
+      return { id: u.id, title: u.title, updatedAt: u.updatedAt.toISOString() };
+    },
+  }),
+  tool({
+    name: "restore_page_version",
+    description: "Restore an earlier version of a page (from list_page_versions). The current text is kept in history first.",
+    scope: "write",
+    shape: { project: projectArg, page: z.string(), versionId: z.string() },
+    run: async ({ project: id, page: ref, versionId }, ctx) => {
+      const pg = await getPageByRef(id, ref);
+      const u = await restorePageVersion(pg.id, versionId, ctx.actor);
+      return { id: u.id, title: u.title, updatedAt: u.updatedAt.toISOString() };
+    },
+  }),
+  tool({
+    name: "archive_page",
+    description: "Archive (hide) a page, or unarchive with archived=false. Reversible; nothing is deleted.",
+    scope: "write",
+    shape: { project: projectArg, page: z.string(), archived: z.boolean().default(true) },
+    run: async ({ project: id, page: ref, archived }, ctx) => {
+      const pg = await getPageByRef(id, ref);
+      await setPageArchived(pg.id, archived, ctx.actor);
+      return { id: pg.id, archived };
     },
   }),
 ];

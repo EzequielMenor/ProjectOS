@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { ChevronRight, ExternalLink, X } from "lucide-react";
+import { ChevronRight, ExternalLink, FileText, X } from "lucide-react";
 import { PRIORITIES, type Priority, type StateGroup } from "@/db/schema";
 import type { StateDTO } from "@/server/dto";
 import {
@@ -84,6 +84,7 @@ export function IssueDetail({
   planning,
   labels: initialLabels,
   candidates,
+  mentions,
 }: {
   issue: Detail;
   states: StateDTO[];
@@ -91,6 +92,7 @@ export function IssueDetail({
   planning: Planning;
   labels: LabelOption[];
   candidates: IssueOption[];
+  mentions: { id: string; title: string; identifier: string }[];
 }) {
   const router = useRouter();
   const [, start] = useTransition();
@@ -264,6 +266,21 @@ export function IssueDetail({
               </IssuePicker>
             </div>
           </section>
+          {mentions.length ? (
+            <section className="mt-8" aria-label="Mencionado en">
+              <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Mencionado en</h2>
+              <ul className="flex flex-col">
+                {mentions.map((m) => (
+                  <li key={m.id}>
+                    <Link href={`/${m.identifier}/pages/${m.id}`} className="flex h-8 items-center gap-2 rounded-md px-1.5 text-sm hover:bg-accent">
+                      <FileText className="size-3.5 text-muted-foreground" />
+                      <span className="truncate">{m.title}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           <section className="mt-8" aria-label="Actividad">
             <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Actividad</h2>
             <ol className="flex flex-col gap-3">

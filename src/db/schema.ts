@@ -260,6 +260,54 @@ export const activity = pgTable(
   (t) => [index("activity_issue_idx").on(t.issueId), index("activity_project_idx").on(t.projectId)],
 );
 
+/** A Markdown document. `[[FICH-12]]` / `[[Other page]]` / bare issue keys become links, tracked in the link tables. */
+export const page = pgTable(
+  "page",
+  {
+    id: id(),
+    projectId: uuid("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content").notNull().default(""),
+    createdBy: text("created_by").notNull().default("user"),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [unique("page_project_title").on(t.projectId, t.title)],
+);
+
+/** Append-only: the content a page had before each edit, so an overwrite is never destructive. */
+export const pageVersion = pgTable(
+  "page_version",
+  {
+    id: id(),
+    pageId: uuid("page_id").notNull().references(() => page.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    actor: text("actor").notNull().default("user"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("page_version_page_idx").on(t.pageId)],
+);
+
+export const pageIssueLink = pgTable(
+  "page_issue_link",
+  {
+    pageId: uuid("page_id").notNull().references(() => page.id, { onDelete: "cascade" }),
+    issueId: uuid("issue_id").notNull().references(() => issue.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.pageId, t.issueId] }), index("page_issue_link_issue_idx").on(t.issueId)],
+);
+
+export const pagePageLink = pgTable(
+  "page_page_link",
+  {
+    pageId: uuid("page_id").notNull().references(() => page.id, { onDelete: "cascade" }),
+    targetPageId: uuid("target_page_id").notNull().references(() => page.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.pageId, t.targetPageId] }), index("page_page_link_target_idx").on(t.targetPageId)],
+);
+
 export const projectRelations = relations(project, ({ many }) => ({
   states: many(state),
   issues: many(issue),

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Boxes, CalendarRange, Columns3, DatabaseBackup, Flag, GanttChart, KeyRound, LayoutList, Moon, Plus, Sun } from "lucide-react";
+import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, LayoutList, Moon, Plus, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaletteButton } from "@/components/command-palette";
 
@@ -61,6 +61,7 @@ export function Sidebar({ projects }: { projects: P[] }) {
                   <SubLink href={`/${p.identifier}/modules`} icon={<Boxes className="size-3.5" />} label="Módulos" active={pathname.endsWith("/modules")} />
                   <SubLink href={`/${p.identifier}/milestones`} icon={<Flag className="size-3.5" />} label="Hitos" active={pathname.endsWith("/milestones")} />
                   <SubLink href={`/${p.identifier}/roadmap`} icon={<GanttChart className="size-3.5" />} label="Roadmap" active={pathname.endsWith("/roadmap")} />
+                  <SubLink href={`/${p.identifier}/pages`} icon={<FileText className="size-3.5" />} label="Docs" active={pathname.includes("/pages")} />
                 </div>
               ) : null}
             </div>

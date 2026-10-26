@@ -52,7 +52,12 @@ Las migraciones (`drizzle/`) se aplican solas al arrancar.
 
    | Lectura | Escritura |
    |---|---|
-   | `list_projects`, `get_project`, `list_issues`, `get_issue`, `search`, `next_work` | `create_issue`, `update_issue`, `set_state`, `complete_issue`, `add_comment`, `log_progress`, `add_link` (commit/PR/evidencia), `add_relation`, `archive_issue` |
+   | `list_projects`, `get_project`, `list_issues`, `get_issue`, `search`, `next_work`, `list_cycles`, `list_modules`, `list_milestones`, `list_pages`, `get_page`, `search_pages`, `list_page_versions` | `create_issue`, `update_issue`, `set_state`, `complete_issue`, `add_comment`, `log_progress`, `add_link` (commit/PR/evidencia), `add_relation`, `archive_issue`, `create_cycle`, `create_module`, `create_milestone`, `assign_issue`, `create_page`, `update_page`, `append_to_page`, `restore_page_version`, `archive_page` |
+
+**Docs**: las páginas son Markdown (editor con vista previa; sin editor WYSIWYG a propósito: el texto plano es lo que mejor
+leen y escriben los agentes). `FICH-12`, `[[FICH-12]]` y `[[Título]]` crean enlaces bidireccionales (el issue muestra «Mencionado
+en», la página muestra «Enlazada desde»). Cada edición conserva la versión anterior; `update_page` exige `expectedUpdatedAt`
+(leer antes de escribir) y `append_to_page` nunca pisa texto.
 
 **Seguridad**: no existe ninguna herramienta de borrado (borrar y restaurar son acciones humanas). Archivar es reversible.
 Cada cambio queda en el historial con el actor `agent:<nombre del token>`, y `update_issue` conserva los valores anteriores

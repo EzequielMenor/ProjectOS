@@ -6,7 +6,8 @@ import { ServiceError } from "@/server/errors";
 import type { Priority, StateGroup } from "@/db/schema";
 import { addComment, addRelation, createIssue, issueKey, moveIssue, removeRelation, searchIssues, setIssueArchived, updateIssue } from "@/server/services/issues";
 import { ensureLabel } from "@/server/services/labels";
-import { createProject } from "@/server/services/projects";
+import { createPage, restorePageVersion, searchPages, setPageArchived, updatePage } from "@/server/services/pages";
+import { createProject, listProjects } from "@/server/services/projects";
 import { createToken, revokeToken } from "@/server/services/tokens";
 import { assignIssue, createCycle, createMilestone, createModule } from "@/server/services/planning";
 
@@ -109,22 +110,54 @@ export async function createLabelAction(input: unknown) {
   });
 }
 
+export async function createPageAction(input: unknown) {
+  return run(async () => {
+    const p = await createPage(input);
+    return { id: p.id };
+  });
+}
+
+export async function updatePageAction(id: string, input: unknown) {
+  return run(async () => {
+    const p = await updatePage(id, input);
+    return { updatedAt: p.updatedAt.toISOString() };
+  });
+}
+
+export async function restorePageVersionAction(id: string, versionId: string) {
+  return run(async () => {
+    const p = await restorePageVersion(id, versionId);
+    return { updatedAt: p.updatedAt.toISOString() };
+  });
+}
+
+export async function archivePageAction(id: string, archived: boolean) {
+  return run(async () => {
+    await setPageArchived(id, archived);
+  });
+}
+
 export type SearchHit = {
   key: string;
   title: string;
   state: { name: string; group: StateGroup; color: string };
   priority: Priority;
 };
+export type PageHit = { id: string; title: string; identifier: string };
 
 /** Read-only: no revalidation, bounded results. Backs the Ctrl+K palette. */
-export async function searchAction(query: string): Promise<SearchHit[]> {
+export async function searchAction(query: string): Promise<{ issues: SearchHit[]; pages: PageHit[] }> {
   const q = String(query ?? "").slice(0, 200);
-  if (q.trim().length < 1) return [];
-  const rows = await searchIssues(q, 12);
-  return rows.map((r) => ({
-    key: issueKey(r.project.identifier, r.seq),
-    title: r.title,
-    state: { name: r.state.name, group: r.state.group, color: r.state.color },
-    priority: r.priority,
-  }));
+  if (q.trim().length < 1) return { issues: [], pages: [] };
+  const [rows, pages, projects] = await Promise.all([searchIssues(q, 12), searchPages(q, 6), listProjects({ includeArchived: true })]);
+  const ident = new Map(projects.map((p) => [p.id, p.identifier]));
+  return {
+    issues: rows.map((r) => ({
+      key: issueKey(r.project.identifier, r.seq),
+      title: r.title,
+      state: { name: r.state.name, group: r.state.group, color: r.state.color },
+      priority: r.priority,
+    })),
+    pages: pages.map((p) => ({ id: p.id, title: p.title, identifier: ident.get(p.projectId) ?? "" })).filter((p) => p.identifier),
+  };
 }

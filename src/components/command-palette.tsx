@@ -3,8 +3,8 @@
 import { useRouter, useParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, CalendarRange, Columns3, DatabaseBackup, Flag, FolderPlus, GanttChart, KeyRound, LayoutList, Moon, Search } from "lucide-react";
-import { searchAction, type SearchHit } from "@/app/actions";
+import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, FolderPlus, GanttChart, KeyRound, LayoutList, Moon, Search } from "lucide-react";
+import { searchAction, type PageHit, type SearchHit } from "@/app/actions";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command";
 import { PriorityIcon, StateIcon } from "@/lib/issue-meta";
 
@@ -18,6 +18,7 @@ const VIEWS = [
   { slug: "modules", label: "Módulos", key: "m", icon: Boxes },
   { slug: "milestones", label: "Hitos", key: "h", icon: Flag },
   { slug: "roadmap", label: "Roadmap", key: "r", icon: GanttChart },
+  { slug: "pages", label: "Docs", key: "d", icon: FileText },
 ] as const;
 
 const inField = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable=true]");
@@ -29,7 +30,7 @@ export function CommandPalette({ projects }: { projects: P[] }) {
   const current = params.project?.toUpperCase();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [found, setFound] = useState<{ q: string; hits: SearchHit[] }>({ q: "", hits: [] });
+  const [found, setFound] = useState<{ q: string; hits: SearchHit[]; pages: PageHit[] }>({ q: "", hits: [], pages: [] });
   const seq = useRef(0);
   const chord = useRef<number | null>(null);
 
@@ -73,14 +74,16 @@ export function CommandPalette({ projects }: { projects: P[] }) {
     const id = ++seq.current;
     if (!q) return;
     const t = setTimeout(async () => {
-      const hits = await searchAction(q).catch(() => []);
-      if (id === seq.current) setFound({ q, hits });
+      const res = await searchAction(q).catch(() => ({ issues: [], pages: [] }));
+      if (id === seq.current) setFound({ q, hits: res.issues, pages: res.pages });
     }, 120);
     return () => clearTimeout(t);
   }, [query]);
 
   // Only show hits for what is typed now; otherwise Enter could open a result of the previous text.
-  const hits = found.q === query.trim() ? found.hits : [];
+  const fresh = found.q === query.trim();
+  const hits = fresh ? found.hits : [];
+  const pageHits = fresh ? found.pages : [];
   const q = query.trim().toLowerCase();
   const match = (label: string) => !q || label.toLowerCase().includes(q);
   const views = current ? VIEWS.filter((v) => match(v.label)) : [];
@@ -114,6 +117,17 @@ export function CommandPalette({ projects }: { projects: P[] }) {
                   <span className="font-mono text-xs text-muted-foreground">{h.key}</span>
                   <span className="truncate">{h.title}</span>
                   <PriorityIcon priority={h.priority} />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+          {pageHits.length ? (
+            <CommandGroup heading="Docs">
+              {pageHits.map((p) => (
+                <CommandItem key={p.id} value={`page ${p.id}`} onSelect={() => go(`/${p.identifier}/pages/${p.id}`)}>
+                  <FileText className="size-4" />
+                  <span className="truncate">{p.title}</span>
+                  <CommandShortcut>{p.identifier}</CommandShortcut>
                 </CommandItem>
               ))}
             </CommandGroup>
