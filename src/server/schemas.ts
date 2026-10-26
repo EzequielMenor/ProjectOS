@@ -5,7 +5,8 @@ export const identifierSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .regex(/^[A-Z][A-Z0-9]{1,9}$/, "2-10 caracteres: letras mayúsculas o dígitos, empezando por letra");
+  .regex(/^[A-Z][A-Z0-9]{1,9}$/, "2-10 caracteres: letras mayúsculas o dígitos, empezando por letra")
+  .refine((v) => !["PROJECTS", "SETTINGS", "API"].includes(v), "Identificador reservado");
 
 const colorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);

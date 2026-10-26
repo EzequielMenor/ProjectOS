@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 import { ServiceError } from "@/server/errors";
 import { addComment, createIssue, moveIssue, setIssueArchived, updateIssue } from "@/server/services/issues";
 import { createProject } from "@/server/services/projects";
+import { createToken, revokeToken } from "@/server/services/tokens";
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -56,5 +57,18 @@ export async function archiveIssueAction(id: string, archived: boolean) {
 export async function addCommentAction(issueId: string, input: unknown) {
   return run(async () => {
     await addComment(issueId, input);
+  });
+}
+
+export async function createTokenAction(input: unknown) {
+  return run(async () => {
+    const t = await createToken(input);
+    return { token: t.token };
+  });
+}
+
+export async function revokeTokenAction(id: string) {
+  return run(async () => {
+    await revokeToken(id);
   });
 }

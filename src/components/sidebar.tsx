@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Columns3, LayoutList, Moon, Plus, Sun } from "lucide-react";
+import { Columns3, KeyRound, LayoutList, Moon, Plus, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type P = { id: string; identifier: string; name: string; color: string };
@@ -61,6 +61,9 @@ export function Sidebar({ projects }: { projects: P[] }) {
           );
         })}
       </nav>
+      <div className="border-t p-2">
+        <SubLink href="/settings/tokens" icon={<KeyRound className="size-3.5" />} label="Tokens de API" active={pathname.startsWith("/settings")} />
+      </div>
     </aside>
   );
 }

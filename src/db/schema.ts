@@ -49,6 +49,21 @@ export const member = pgTable("member", {
   createdAt: createdAt(),
 });
 
+export const TOKEN_SCOPES = ["read", "write"] as const;
+export type TokenScope = (typeof TOKEN_SCOPES)[number];
+
+/** Bearer tokens for agents/API clients. Only the SHA-256 hash is stored. */
+export const apiToken = pgTable("api_token", {
+  id: id(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspace.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  scope: text("scope", { enum: TOKEN_SCOPES }).notNull().default("read"),
+  createdAt: createdAt(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+});
+
 export const project = pgTable(
   "project",
   {
