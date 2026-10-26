@@ -59,6 +59,11 @@ leen y escriben los agentes). `FICH-12`, `[[FICH-12]]` y `[[Título]]` crean enl
 en», la página muestra «Enlazada desde»). Cada edición conserva la versión anterior; `update_page` exige `expectedUpdatedAt`
 (leer antes de escribir) y `append_to_page` nunca pisa texto.
 
+**Verificado con Claude Code real**: con un servidor de producción (`next start`) y un token `write`, `claude -p` con este
+MCP ejecutó `next_work` → `set_state` → `log_progress` (con evidencia de commit) → `create_page` (con `[[CCT-2]]`); después se
+comprobó por REST que el issue quedó En progreso con comentario y enlace, y que la página enlaza al otro issue, todo con
+actor `agent:<token>`.
+
 **Seguridad**: no existe ninguna herramienta de borrado (borrar y restaurar son acciones humanas). Archivar es reversible.
 Cada cambio queda en el historial con el actor `agent:<nombre del token>`, y `update_issue` conserva los valores anteriores
 (p. ej. la descripción previa) en la actividad.
