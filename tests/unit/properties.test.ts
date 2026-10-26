@@ -141,7 +141,7 @@ describe("backup", () => {
     delete old.counts.property_def;
     delete old.counts.issue_property_value;
     await restoreBackup(old, { replace: true });
-    expect((await call("get_issue", { key: "PRP-1" })).properties).toEqual({});
+    expect((await call("get_issue", { key: "PRP-1" })).properties).toBeUndefined();
     expect(await listPropertyDefs(projectId)).toEqual([]);
   });
 });

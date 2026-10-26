@@ -44,7 +44,7 @@ describe("cycles, modules and milestones", () => {
     // replacing the module set and clearing the cycle
     await call("assign_issue", { key: keys[0], cycle: null, modules: ["B · Fichajes"] });
     const again = await call("get_issue", { key: keys[0] });
-    expect(again.cycle).toBeNull();
+    expect(again.cycle).toBeUndefined();
     expect(again.modules).toEqual(["B · Fichajes"]);
   });
 

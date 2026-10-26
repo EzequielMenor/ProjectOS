@@ -85,24 +85,30 @@ type IssueLike = {
   propertyValues?: { value: string | number; property: { name: string } }[];
 };
 
-const summary = (i: IssueLike, identifier: string) => ({
-  key: issueKey(identifier, i.seq),
-  title: i.title,
-  type: i.type,
-  state: i.state.name,
-  stateGroup: i.state.group,
-  priority: i.priority,
-  assignee: i.assignee?.name ?? null,
-  estimate: i.estimate,
-  startDate: i.startDate,
-  dueDate: i.dueDate,
-  labels: i.labels.map((l) => l.label.name),
-  cycle: i.cycle?.name ?? null,
-  modules: (i.modules ?? []).map((m) => m.module.name),
-  milestone: i.milestone?.name ?? null,
-  properties: Object.fromEntries((i.propertyValues ?? []).map((v) => [v.property.name, v.value])),
-  archived: Boolean(i.archivedAt),
-});
+/** Drops empty values so listings stay cheap in tokens: an absent field means null / [] / {} / false. */
+const compact = <T extends Record<string, unknown>>(o: T) =>
+  Object.fromEntries(
+    Object.entries(o).filter(([, v]) => v !== null && v !== false && !(Array.isArray(v) && v.length === 0) && !(typeof v === "object" && v !== null && !Array.isArray(v) && Object.keys(v).length === 0)),
+  ) as Partial<T>;
+
+const summary = (i: IssueLike, identifier: string) =>
+  compact({
+    key: issueKey(identifier, i.seq),
+    title: i.title,
+    type: i.type,
+    state: i.state.name,
+    priority: i.priority,
+    assignee: i.assignee?.name ?? null,
+    estimate: i.estimate,
+    startDate: i.startDate,
+    dueDate: i.dueDate,
+    labels: i.labels.map((l) => l.label.name),
+    cycle: i.cycle?.name ?? null,
+    modules: (i.modules ?? []).map((m) => m.module.name),
+    milestone: i.milestone?.name ?? null,
+    properties: Object.fromEntries((i.propertyValues ?? []).map((v) => [v.property.name, v.value])),
+    archived: Boolean(i.archivedAt),
+  });
 
 const propertiesArg = z
   .record(z.string(), z.union([z.string(), z.number(), z.null()]))
@@ -123,10 +129,15 @@ export const TOOLS: ToolDef[] = [
   // ---- read ----
   tool({
     name: "list_projects",
-    description: "List active projects with their identifiers.",
+    description: "List active projects with their identifiers (descriptions are shortened; get_project has everything).",
     scope: "read",
     shape: {},
-    run: async () => (await listProjects()).map((p) => ({ identifier: p.identifier, name: p.name, description: p.description })),
+    run: async () =>
+      (await listProjects()).map((p) => ({
+        identifier: p.identifier,
+        name: p.name,
+        ...(p.description ? { description: p.description.length > 160 ? `${p.description.slice(0, 157)}… (get_project for the rest)` : p.description } : {}),
+      })),
   }),
   tool({
     name: "get_project",

@@ -16,7 +16,7 @@ export function errorMessage(e: unknown): { message: string; status: number } {
 }
 
 /** Sent to every agent on connect (MCP `instructions`): the working agreement, so each project's CLAUDE.md can stay short. */
-export const MCP_INSTRUCTIONS = `ProjectOS is the project tracker for this work. Issues have keys like FICH-12; names (states, labels, members, properties) are matched case-insensitively.
+export const MCP_INSTRUCTIONS = `ProjectOS is the project tracker for this work. Issues have keys like FICH-12; names (states, labels, members, properties) are matched case-insensitively. Listings omit empty fields: an absent assignee, cycle, labels, properties… means none.
 
 Workflow:
 1. next_work (optionally with project / assignee) tells you what to do next. Read the issue with get_issue before touching it (description, relations, comments, children).
@@ -42,7 +42,7 @@ export function buildMcpServer(ctx: AuthContext) {
       async (args: unknown) => {
         try {
           const result = await callTool(t.name, args, ctx);
-          return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+          return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
         } catch (e) {
           return { isError: true, content: [{ type: "text" as const, text: errorMessage(e).message }] };
         }

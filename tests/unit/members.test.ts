@@ -119,7 +119,7 @@ describe("agent tools for members", () => {
     await call("update_issue", { key: created.key, assignee: "Ana" });
     expect((await call("get_issue", { key: created.key })).assignee).toBe("Ana");
     await call("update_issue", { key: created.key, assignee: null });
-    expect((await call("get_issue", { key: created.key })).assignee).toBeNull();
+    expect((await call("get_issue", { key: created.key })).assignee).toBeUndefined();
     expect(await call("list_issues", { project: "MEM", assignee: "Claude Code" })).toEqual([]);
 
     const act = (await listActivity((await getIssueByKey(created.key)).id)).at(0)!;
