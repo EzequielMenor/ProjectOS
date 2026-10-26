@@ -54,7 +54,8 @@ export async function createBackup(): Promise<Backup> {
 }
 
 export function backupDir() {
-  return process.env.BACKUP_DIR ?? path.join(process.cwd(), "data", "backups");
+  // Runtime path: keep the bundler from tracing the whole data/ directory.
+  return process.env.BACKUP_DIR ?? path.join(/*turbopackIgnore: true*/ process.cwd(), "data", "backups");
 }
 
 export async function saveBackupToDisk(label = "backup") {

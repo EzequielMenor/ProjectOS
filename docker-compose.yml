@@ -1,0 +1,35 @@
+# ProjectOS + PostgreSQL. The app has no login (single-user, local-first): it is published on
+# 127.0.0.1 only. Put it behind an authenticating reverse proxy before exposing it elsewhere.
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: projectos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-projectos}
+      POSTGRES_DB: projectos
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U projectos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://projectos:${POSTGRES_PASSWORD:-projectos}@db:5432/projectos
+      BACKUP_DIR: /app/data/backups
+    ports:
+      - "127.0.0.1:${PORT:-3000}:3000"
+    volumes:
+      - backups:/app/data/backups
+
+volumes:
+  pgdata:
+  backups:
