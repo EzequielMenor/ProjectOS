@@ -28,6 +28,13 @@ export const createMilestoneInput = z.object({
   description: z.string().max(20_000).optional(),
   targetDate: dateSchema.nullish(),
 });
+const nonEmpty = (o: Record<string, unknown>) => {
+  if (Object.values(o).every((v) => v === undefined)) throw invalid("No hay nada que cambiar");
+  return o;
+};
+export const updateCycleInput = createCycleInput.omit({ projectId: true }).partial();
+export const updateModuleInput = createModuleInput.omit({ projectId: true }).partial();
+export const updateMilestoneInput = createMilestoneInput.omit({ projectId: true }).partial();
 export const assignInput = z.object({
   cycleId: z.uuid().nullable().optional(),
   milestoneId: z.uuid().nullable().optional(),
@@ -104,6 +111,16 @@ export async function createCycle(raw: unknown) {
   return row;
 }
 
+export async function updateCycle(id: string, raw: unknown) {
+  const i = nonEmpty(updateCycleInput.parse(raw)) as z.infer<typeof updateCycleInput>;
+  const db = await getDb();
+  const [cur] = await db.select().from(cycle).where(eq(cycle.id, id));
+  if (!cur) throw notFound("Ciclo");
+  checkRange(i.startDate === undefined ? cur.startDate : i.startDate, i.endDate === undefined ? cur.endDate : i.endDate);
+  const [row] = await dupGuard(() => db.update(cycle).set(i).where(eq(cycle.id, id)).returning(), "un ciclo");
+  return row;
+}
+
 export async function listModules(projectId: string) {
   const db = await getDb();
   const [rows, prog] = await Promise.all([
@@ -121,6 +138,16 @@ export async function createModule(raw: unknown) {
   return row;
 }
 
+export async function updateModule(id: string, raw: unknown) {
+  const i = nonEmpty(updateModuleInput.parse(raw)) as z.infer<typeof updateModuleInput>;
+  const db = await getDb();
+  const [cur] = await db.select().from(module).where(eq(module.id, id));
+  if (!cur) throw notFound("Módulo");
+  checkRange(i.startDate === undefined ? cur.startDate : i.startDate, i.targetDate === undefined ? cur.targetDate : i.targetDate);
+  const [row] = await dupGuard(() => db.update(module).set(i).where(eq(module.id, id)).returning(), "un módulo");
+  return row;
+}
+
 export async function listMilestones(projectId: string) {
   const db = await getDb();
   const [rows, prog] = await Promise.all([
@@ -134,6 +161,14 @@ export async function createMilestone(raw: unknown) {
   const i = createMilestoneInput.parse(raw);
   const db = await getDb();
   const [row] = await dupGuard(() => db.insert(milestone).values({ ...i, description: i.description ?? "" }).returning(), "un hito");
+  return row;
+}
+
+export async function updateMilestone(id: string, raw: unknown) {
+  const i = nonEmpty(updateMilestoneInput.parse(raw)) as z.infer<typeof updateMilestoneInput>;
+  const db = await getDb();
+  const [row] = await dupGuard(() => db.update(milestone).set(i).where(eq(milestone.id, id)).returning(), "un hito");
+  if (!row) throw notFound("Hito");
   return row;
 }
 

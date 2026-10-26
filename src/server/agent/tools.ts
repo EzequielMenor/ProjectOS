@@ -16,8 +16,9 @@ import {
 } from "../services/issues";
 import { childProgress, listEpics } from "../services/epics";
 import { listLabels, resolveLabelIds } from "../services/labels";
-import { assignIssue, createCycle, createMilestone, createModule, listCycles, listMilestones, listModules } from "../services/planning";
-import { getProjectByIdentifier, listProjects, listStates } from "../services/projects";
+import { assignIssue, createCycle, createMilestone, createModule, listCycles, listMilestones, listModules, updateCycle, updateMilestone, updateModule } from "../services/planning";
+import { createProject, getProjectByIdentifier, listProjects, listStates } from "../services/projects";
+import { createState } from "../services/states";
 import {
   appendToPage,
   createPage,
@@ -64,6 +65,20 @@ async function resolveState(projectId: string, name: string) {
   const s = states.find((x) => x.name.toLowerCase() === name.trim().toLowerCase());
   if (!s) throw invalid(`Estado desconocido "${name}". Válidos: ${states.map((x) => x.name).join(", ")}`);
   return s;
+}
+
+const STATE_GROUP_COLOR: Record<(typeof STATE_GROUPS)[number], string> = {
+  backlog: "#94a3b8",
+  unstarted: "#64748b",
+  started: "#f59e0b",
+  completed: "#22c55e",
+  cancelled: "#ef4444",
+};
+
+function findNamed<T extends { name: string }>(rows: T[], name: string, what: string): T {
+  const hit = rows.find((r) => r.name.toLowerCase() === name.trim().toLowerCase());
+  if (!hit) throw invalid(`${what[0].toUpperCase()}${what.slice(1)} desconocido "${name}". Válidos: ${rows.map((r) => r.name).join(", ") || "(ninguno)"}`);
+  return hit;
 }
 
 type IssueLike = {
@@ -550,6 +565,70 @@ export const TOOLS: ToolDef[] = [
     run: async ({ project: id, ...rest }) => {
       const p = await project(id);
       return { name: (await createMilestone({ projectId: p.id, ...rest })).name };
+    },
+  }),
+  tool({
+    name: "create_project",
+    description:
+      "Create a project (identifier such as FICH: 2-10 letters/digits). It starts with the default workflow Backlog / Todo / In Progress / Done / Cancelled. Agents cannot rename, archive or delete projects.",
+    scope: "write",
+    shape: { identifier: z.string(), name: z.string(), description: z.string().optional() },
+    run: async (a, ctx) => {
+      const p = await createProject(a, ctx.actor);
+      return { identifier: p.identifier, name: p.name };
+    },
+  }),
+  tool({
+    name: "create_state",
+    description:
+      "Add a workflow state to a project (e.g. 'In Review' in group 'started'). Groups: backlog, unstarted, started, completed, cancelled. Existing states cannot be renamed, reordered or removed by agents.",
+    scope: "write",
+    shape: { project: projectArg, name: z.string(), group: z.enum(STATE_GROUPS), color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe("#rrggbb; defaults by group") },
+    run: async ({ project: id, name, group, color }, ctx) => {
+      const p = await project(id);
+      const created = await createState({ projectId: p.id, name, group, color: color ?? STATE_GROUP_COLOR[group] }, ctx.actor);
+      return { name: created.name, group: created.group };
+    },
+  }),
+  tool({
+    name: "update_cycle",
+    description: "Edit a cycle found by name: rename it, change its description or dates (null clears a date).",
+    scope: "write",
+    shape: { project: projectArg, name: z.string().describe("Current name"), newName: z.string().optional(), description: z.string().optional(), startDate: z.string().nullable().optional().describe("YYYY-MM-DD"), endDate: z.string().nullable().optional() },
+    run: async ({ project: id, name, newName, ...rest }) => {
+      const p = await project(id);
+      const c = findNamed(await listCycles(p.id), name, "ciclo");
+      return { name: (await updateCycle(c.id, { ...rest, ...(newName ? { name: newName } : {}) })).name };
+    },
+  }),
+  tool({
+    name: "update_module",
+    description: "Edit a module found by name: rename it, change description, status (backlog, planned, in_progress, paused, completed, cancelled) or dates (null clears a date).",
+    scope: "write",
+    shape: {
+      project: projectArg,
+      name: z.string().describe("Current name"),
+      newName: z.string().optional(),
+      description: z.string().optional(),
+      status: z.enum(["backlog", "planned", "in_progress", "paused", "completed", "cancelled"]).optional(),
+      startDate: z.string().nullable().optional(),
+      targetDate: z.string().nullable().optional(),
+    },
+    run: async ({ project: id, name, newName, ...rest }) => {
+      const p = await project(id);
+      const m = findNamed(await listModules(p.id), name, "módulo");
+      return { name: (await updateModule(m.id, { ...rest, ...(newName ? { name: newName } : {}) })).name };
+    },
+  }),
+  tool({
+    name: "update_milestone",
+    description: "Edit a roadmap milestone found by name: rename it, change description or target date (null clears it).",
+    scope: "write",
+    shape: { project: projectArg, name: z.string().describe("Current name"), newName: z.string().optional(), description: z.string().optional(), targetDate: z.string().nullable().optional() },
+    run: async ({ project: id, name, newName, ...rest }) => {
+      const p = await project(id);
+      const m = findNamed(await listMilestones(p.id), name, "hito");
+      return { name: (await updateMilestone(m.id, { ...rest, ...(newName ? { name: newName } : {}) })).name };
     },
   }),
   tool({

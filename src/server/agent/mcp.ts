@@ -25,7 +25,7 @@ Workflow:
 4. When it is truly done and verified: complete_issue with the evidence. If you are blocked, say so with add_comment and add_relation (the blocker 'blocks' this issue), do not mark it done.
 5. Found extra work? create_issue (with parent for sub-tasks) instead of widening the current one.
 
-Rules: never invent issue keys, states or property values: read them first (get_project, list_properties, list_members). Docs pages (get_page / update_page / append_to_page): read before you write; update_page needs the expectedUpdatedAt you read, append_to_page never overwrites. There are no delete tools by design: archive_issue / archive_page are reversible. Your writes are recorded in the activity log as your token's name.`;
+Rules: never invent issue keys, states or property values: read them first (get_project, list_properties, list_members). Docs pages (get_page / update_page / append_to_page): read before you write; update_page needs the expectedUpdatedAt you read, append_to_page never overwrites. There are no delete tools by design: archive_issue / archive_page are reversible. You can create projects, states, cycles, modules, milestones, labels and properties and edit cycles / modules / milestones, but renaming or removing projects and states, tokens and backups are left to the human. Your writes are recorded in the activity log as your token's name.`;
 
 /** Builds a per-request MCP server exposing only the tools this token's scope allows. */
 export function buildMcpServer(ctx: AuthContext) {
