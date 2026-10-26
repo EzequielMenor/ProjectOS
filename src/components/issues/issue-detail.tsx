@@ -17,6 +17,7 @@ import {
   updateIssueAction,
 } from "@/app/actions";
 import { PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
+import { Markdown } from "@/components/markdown";
 import { Textarea } from "@/components/ui/textarea";
 import { OptionPicker } from "./option-picker";
 import { LabelPicker, type LabelOption } from "./label-picker";
@@ -75,6 +76,46 @@ function describe(a: Activity): string {
     return parts.join(", ") || "actualizó el issue";
   }
   return a.action;
+}
+
+/** Markdown when reading, plain textarea when editing; saves on blur. An empty description opens straight in the editor. */
+function DescriptionField({ value, saved, onChange, onSave }: { value: string; saved: string; onChange: (v: string) => void; onSave: () => void }) {
+  const [editing, setEditing] = useState(false);
+  if (!editing && value.trim()) {
+    return (
+      <div className="group relative mt-4">
+        <div
+          onClick={(e) => !(e.target as HTMLElement).closest("a") && setEditing(true)}
+          className="cursor-text rounded-md"
+          data-testid="description-view"
+        >
+          <Markdown>{value}</Markdown>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="absolute -top-2 right-0 rounded border bg-background px-1.5 py-0.5 text-xs text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          Editar descripción
+        </button>
+      </div>
+    );
+  }
+  return (
+    <Textarea
+      aria-label="Descripción"
+      value={value}
+      autoFocus={editing}
+      onFocus={() => setEditing(true)}
+      placeholder="Añade una descripción (Markdown)…"
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={() => {
+        if (value !== saved) onSave();
+        setEditing(false);
+      }}
+      className="mt-4 min-h-32 resize-y border-transparent bg-transparent px-0 shadow-none focus-visible:border-input focus-visible:px-3 dark:bg-transparent"
+    />
+  );
 }
 
 export function IssueDetail({
@@ -177,14 +218,7 @@ export function IssueDetail({
             onBlur={() => title.trim() && title !== issue.title && save({ title: title.trim() })}
             className="w-full bg-transparent text-xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground"
           />
-          <Textarea
-            aria-label="Descripción"
-            value={description}
-            placeholder="Añade una descripción (Markdown)…"
-            onChange={(e) => setDescription(e.target.value)}
-            onBlur={() => description !== issue.description && save({ description })}
-            className="mt-4 min-h-32 resize-y border-transparent bg-transparent px-0 shadow-none focus-visible:border-input focus-visible:px-3 dark:bg-transparent"
-          />
+          <DescriptionField value={description} saved={issue.description} onChange={setDescription} onSave={() => save({ description })} />
           {issue.links.length ? (
             <section className="mt-6">
               <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Enlaces</h2>

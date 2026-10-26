@@ -45,6 +45,11 @@ test("detalle: editar título, descripción y comentar", async ({ page }) => {
   await expect(page.getByLabel("Actividad").getByText("Primer comentario")).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("Título")).toHaveValue("Título nuevo");
+  // reading view renders the Markdown; clicking it opens the raw text; leaving without changes keeps it
+  await expect(page.getByTestId("description-view").locator("strong")).toHaveText("real");
+  await page.getByTestId("description-view").click();
   await expect(page.getByLabel("Descripción")).toHaveValue("Descripción **real**");
+  await page.getByLabel("Título").click();
+  await expect(page.getByTestId("description-view")).toBeVisible();
   await expect(page.getByLabel("Actividad")).toContainText("Primer comentario");
 });
