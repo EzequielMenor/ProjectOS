@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { IssueDetail } from "@/components/issues/issue-detail";
 import { ServiceError } from "@/server/errors";
-import { toStateDTO } from "@/server/dto";
+import { toPropertyDTO, toStateDTO } from "@/server/dto";
+import { listPropertyDefs } from "@/server/services/properties";
 import { getIssueByKey, listActivity, listIssues } from "@/server/services/issues";
 import { pagesMentioningIssue } from "@/server/services/pages";
 import { listLabels } from "@/server/services/labels";
@@ -20,7 +21,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
     if (e instanceof ServiceError && (e.code === "not_found" || e.code === "invalid")) notFound();
     throw e;
   });
-  const [states, activity, cycles, modules, milestones, labels, relations, siblings, mentions] = await Promise.all([
+  const [states, activity, cycles, modules, milestones, labels, relations, siblings, mentions, propertyDefs] = await Promise.all([
     listStates(issue.projectId),
     listActivity(issue.id),
     listCycles(issue.projectId),
@@ -30,6 +31,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
     listRelations(issue.id),
     listIssues({ projectId: issue.projectId, limit: 500 }),
     pagesMentioningIssue(issue.id),
+    listPropertyDefs(issue.projectId),
   ]);
   const stateName = new Map(states.map((s) => [s.id, s.name]));
   return (
@@ -50,6 +52,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
         labelIds: issue.labels.map((l) => l.labelId),
         dueDate: issue.dueDate,
         estimate: issue.estimate,
+        properties: Object.fromEntries(issue.propertyValues.map((v) => [v.propertyId, v.value])),
         parent: issue.parent ? { id: issue.parent.id, key: `${issue.project.identifier}-${issue.parent.seq}`, title: issue.parent.title } : null,
         children: issue.children.map((c) => ({ id: c.id, key: `${issue.project.identifier}-${c.seq}`, title: c.title, stateGroup: c.state.group, stateColor: c.state.color })),
         relations: relations.map((r) => ({ type: r.type, id: r.id, key: r.key, title: r.title, stateGroup: r.stateGroup })),
@@ -60,6 +63,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
         links: issue.links.map((l) => ({ id: l.id, kind: l.kind, url: l.url, title: l.title })),
       }}
       states={states.map(toStateDTO)}
+      propertyDefs={propertyDefs.map(toPropertyDTO)}
       mentions={mentions.map((p) => ({ id: p.id, title: p.title, identifier: p.identifier }))}
       labels={labels.map((l) => ({ id: l.id, name: l.name, color: l.color }))}
       candidates={siblings

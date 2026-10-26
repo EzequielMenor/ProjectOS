@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
 import { activeCount, EMPTY_FILTERS, serializeFilters, type Filters } from "@/lib/issue-filters";
-import type { LabelDTO, StateDTO } from "@/server/dto";
+import type { LabelDTO, PropertyDTO, StateDTO } from "@/server/dto";
 import { cn } from "@/lib/utils";
 
 type Named = { id: string; name: string };
@@ -23,10 +23,12 @@ export function FilterBar({
   labels,
   cycles,
   modules,
+  properties,
   views,
   project,
   layout,
 }: {
+  properties: PropertyDTO[];
   filters: Filters;
   onChange: (f: Filters) => void;
   states: StateDTO[];
@@ -77,6 +79,20 @@ export function FilterBar({
       ) : null}
       {cycles.length ? <MultiFilter title="Ciclo" selected={filters.cycle} onToggle={(v) => toggle("cycle", v)} options={cycles.map((c) => ({ value: c.id, label: c.name }))} /> : null}
       {modules.length ? <MultiFilter title="Módulo" selected={filters.module} onToggle={(v) => toggle("module", v)} options={modules.map((m) => ({ value: m.id, label: m.name }))} /> : null}
+      {properties
+        .filter((p) => p.type === "select")
+        .map((p) => (
+          <MultiFilter
+            key={p.id}
+            title={p.name}
+            selected={filters.prop[p.id] ?? []}
+            onToggle={(v) => {
+              const cur = filters.prop[p.id] ?? [];
+              onChange({ ...filters, prop: { ...filters.prop, [p.id]: cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v] } });
+            }}
+            options={p.options.map((o) => ({ value: o, label: o }))}
+          />
+        ))}
       {n ? (
         <button onClick={() => onChange(EMPTY_FILTERS)} className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
           <X className="size-3" /> Limpiar

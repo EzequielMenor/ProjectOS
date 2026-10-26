@@ -10,6 +10,8 @@ export const identifierSchema = z
 
 const colorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/** Custom property values keyed by property id; null clears. Types are checked against the definition in the service. */
+const propertiesSchema = z.record(z.uuid(), z.union([z.string().max(2000), z.number(), z.null()]));
 
 export const createProjectInput = z.object({
   identifier: identifierSchema,
@@ -37,6 +39,7 @@ export const createIssueInput = z.object({
   startDate: dateSchema.nullish(),
   dueDate: dateSchema.nullish(),
   labelIds: z.array(z.uuid()).max(50).optional(),
+  properties: propertiesSchema.optional(),
 });
 
 export const updateIssueInput = z.object({
@@ -51,6 +54,7 @@ export const updateIssueInput = z.object({
   startDate: dateSchema.nullable().optional(),
   dueDate: dateSchema.nullable().optional(),
   labelIds: z.array(z.uuid()).max(50).optional(),
+  properties: propertiesSchema.optional(),
 });
 
 export const moveIssueInput = z.object({
@@ -68,6 +72,7 @@ export const listIssuesInput = z.object({
   parentId: z.uuid().optional(),
   type: z.enum(ISSUE_TYPES).optional(),
   labelId: z.uuid().optional(),
+  property: z.object({ propertyId: z.uuid(), value: z.union([z.string(), z.number()]) }).optional(),
   query: z.string().trim().max(200).optional(),
   includeArchived: z.boolean().optional(),
   limit: z.number().int().min(1).max(500).optional(),

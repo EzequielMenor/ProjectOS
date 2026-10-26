@@ -25,6 +25,9 @@ export type IssueType = (typeof ISSUE_TYPES)[number];
 export const RELATION_TYPES = ["blocks", "relates", "duplicates"] as const;
 export type RelationType = (typeof RELATION_TYPES)[number];
 
+export const PROPERTY_TYPES = ["text", "number", "date", "select"] as const;
+export type PropertyType = (typeof PROPERTY_TYPES)[number];
+
 export const LINK_KINDS = ["url", "commit", "pr", "evidence"] as const;
 export type LinkKind = (typeof LINK_KINDS)[number];
 
@@ -245,6 +248,32 @@ export const issueLink = pgTable(
   (t) => [index("issue_link_issue_idx").on(t.issueId)],
 );
 
+/** A project-level custom field. The type is fixed at creation; `options` only applies to `select`. */
+export const propertyDef = pgTable(
+  "property_def",
+  {
+    id: id(),
+    projectId: uuid("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    type: text("type", { enum: PROPERTY_TYPES }).notNull(),
+    options: jsonb("options").$type<string[]>().notNull().default([]),
+    position: doublePrecision("position").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("property_def_project_name").on(t.projectId, t.name), index("property_def_project_idx").on(t.projectId)],
+);
+
+/** One row per issue and property that has a value; no row means unset. text/select → string, number → number, date → YYYY-MM-DD. */
+export const issuePropertyValue = pgTable(
+  "issue_property_value",
+  {
+    issueId: uuid("issue_id").notNull().references(() => issue.id, { onDelete: "cascade" }),
+    propertyId: uuid("property_id").notNull().references(() => propertyDef.id, { onDelete: "cascade" }),
+    value: jsonb("value").$type<string | number>().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.issueId, t.propertyId] }), index("issue_property_value_property_idx").on(t.propertyId)],
+);
+
 /** Append-only audit log. Never updated or deleted by the application. */
 export const activity = pgTable(
   "activity",
@@ -343,6 +372,12 @@ export const issueRelations = relations(issue, ({ one, many }) => ({
   cycle: one(cycle, { fields: [issue.cycleId], references: [cycle.id] }),
   milestone: one(milestone, { fields: [issue.milestoneId], references: [milestone.id] }),
   modules: many(issueModule),
+  propertyValues: many(issuePropertyValue),
+}));
+
+export const issuePropertyValueRelations = relations(issuePropertyValue, ({ one }) => ({
+  issue: one(issue, { fields: [issuePropertyValue.issueId], references: [issue.id] }),
+  property: one(propertyDef, { fields: [issuePropertyValue.propertyId], references: [propertyDef.id] }),
 }));
 
 export const issueModuleRelations = relations(issueModule, ({ one }) => ({

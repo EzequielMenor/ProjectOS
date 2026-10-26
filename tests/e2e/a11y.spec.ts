@@ -31,6 +31,21 @@ for (const theme of ["light", "dark"] as const) {
     await page.keyboard.press("Enter");
     await expect(page.getByRole("link", { name: "Tarea hija" })).toBeVisible();
 
+    // custom properties, so settings, detail and table are audited with them present
+    await page.goto(`/${key}/settings`);
+    const props = page.getByRole("region", { name: "Propiedades personalizadas" });
+    for (const [name, type, options] of [["Severidad", "select", "Alta, Baja"], ["Horas", "number", ""]]) {
+      await props.getByLabel("Nombre de la nueva propiedad").fill(name);
+      await props.getByLabel("Tipo de la nueva propiedad").selectOption(type);
+      if (options) await props.getByLabel("Opciones de la nueva propiedad").fill(options);
+      await props.getByRole("button", { name: "Añadir" }).click();
+      await expect(props.getByLabel(`Nombre de ${name}`)).toBeVisible();
+    }
+    await page.goto(`/${key}/issues/1`);
+    await page.getByRole("complementary", { name: "Propiedades" }).getByLabel("Horas").fill("8");
+    await page.getByRole("complementary", { name: "Propiedades" }).getByLabel("Horas").press("Enter");
+    await expect(page.getByText("cambió «Horas»")).toBeVisible();
+
     for (const path of ["list", "board", "table", "epics", "cycles", "modules", "milestones", "roadmap", "pages", "settings", "issues/1", "issues/2"]) {
       await page.goto(`/${key}/${path}`);
       await page.waitForLoadState("networkidle");

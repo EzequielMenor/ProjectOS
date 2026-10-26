@@ -7,7 +7,7 @@ import { createView, deleteView, listViews } from "@/server/services/views";
 
 const issue = (o: Partial<IssueDTO>): IssueDTO => ({
   id: "i", key: "X-1", seq: 1, title: "t", type: "issue", stateId: "s1", priority: "none", parentId: null, assigneeId: null,
-  estimate: null, dueDate: null, cycleId: null, milestoneId: null, moduleIds: [], sortOrder: 0, labels: [], ...o,
+  estimate: null, dueDate: null, cycleId: null, milestoneId: null, moduleIds: [], sortOrder: 0, labels: [], properties: {}, ...o,
 });
 
 describe("issue filters", () => {

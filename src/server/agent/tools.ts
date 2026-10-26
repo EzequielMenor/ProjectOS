@@ -1,5 +1,5 @@
 import { z, type ZodRawShape } from "zod";
-import { ISSUE_TYPES, LINK_KINDS, PRIORITIES, RELATION_TYPES, STATE_GROUPS, type TokenScope } from "@/db/schema";
+import { ISSUE_TYPES, LINK_KINDS, PRIORITIES, PROPERTY_TYPES, RELATION_TYPES, STATE_GROUPS, type TokenScope } from "@/db/schema";
 import { ServiceError, invalid } from "../errors";
 import {
   addComment,
@@ -32,6 +32,7 @@ import {
 } from "../services/pages";
 import type { AuthContext } from "../services/tokens";
 import { listRelations, nextWork } from "../services/work";
+import { coerceValue, createPropertyDef, listPropertyDefs, resolvePropertyInputs, type PropInput } from "../services/properties";
 
 /**
  * The single catalogue of agent-facing operations. MCP and REST are both generated from it, so
@@ -80,6 +81,7 @@ type IssueLike = {
   cycle?: { name: string } | null;
   milestone?: { name: string } | null;
   modules?: { module: { name: string } }[];
+  propertyValues?: { value: string | number; property: { name: string } }[];
 };
 
 const summary = (i: IssueLike, identifier: string) => ({
@@ -97,8 +99,13 @@ const summary = (i: IssueLike, identifier: string) => ({
   cycle: i.cycle?.name ?? null,
   modules: (i.modules ?? []).map((m) => m.module.name),
   milestone: i.milestone?.name ?? null,
+  properties: Object.fromEntries((i.propertyValues ?? []).map((v) => [v.property.name, v.value])),
   archived: Boolean(i.archivedAt),
 });
+
+const propertiesArg = z
+  .record(z.string(), z.union([z.string(), z.number(), z.null()]))
+  .describe("Custom property values by property NAME (see list_properties). null clears a value. Dates are YYYY-MM-DD; select values must be one of the options.");
 
 const pct = (p: { total: number; completed: number; cancelled: number }) => {
   const live = p.total - p.cancelled;
@@ -134,7 +141,18 @@ export const TOOLS: ToolDef[] = [
         description: p.description,
         states: states.map((s) => ({ name: s.name, group: s.group })),
         labels: labels.map((l) => l.name),
+        properties: (await listPropertyDefs(p.id)).map((d) => ({ name: d.name, type: d.type, ...(d.type === "select" ? { options: d.options } : {}) })),
       };
+    },
+  }),
+  tool({
+    name: "list_properties",
+    description: "List a project's custom properties: name, type (text, number, date, select) and, for select, the allowed options.",
+    scope: "read",
+    shape: { project: projectArg },
+    run: async ({ project: id }) => {
+      const p = await project(id);
+      return (await listPropertyDefs(p.id)).map((d) => ({ name: d.name, type: d.type, options: d.type === "select" ? d.options : undefined }));
     },
   }),
   tool({
@@ -148,6 +166,8 @@ export const TOOLS: ToolDef[] = [
       priority: z.enum(PRIORITIES).optional(),
       type: z.enum(ISSUE_TYPES).optional(),
       query: z.string().optional().describe("Text in title or description"),
+      property: z.string().optional().describe("Custom property name to filter by (requires 'project' and 'propertyValue')"),
+      propertyValue: z.union([z.string(), z.number()]).optional().describe("Exact value the property must have"),
       parent: key.optional().describe("Only children of this issue"),
       includeArchived: z.boolean().optional(),
       limit: z.number().int().min(1).max(200).default(50),
@@ -157,7 +177,19 @@ export const TOOLS: ToolDef[] = [
       const stateId = p && a.state ? (await resolveState(p.id, a.state)).id : undefined;
       if (a.state && !p) throw invalid("'state' requiere 'project'; usa stateGroup para filtrar entre proyectos");
       const parentId = a.parent ? (await getIssueByKey(a.parent)).id : undefined;
+      if ((a.property === undefined) !== (a.propertyValue === undefined)) throw invalid("'property' y 'propertyValue' van juntos");
+      let property: { propertyId: string; value: string | number } | undefined;
+      if (a.property !== undefined && a.propertyValue !== undefined) {
+        if (!p) throw invalid("'property' requiere 'project'");
+        const defs = await listPropertyDefs(p.id);
+        const d = defs.find((x) => x.name.toLowerCase() === a.property!.trim().toLowerCase());
+        if (!d) throw invalid(`Propiedad desconocida "${a.property}". Válidas: ${defs.map((x) => x.name).join(", ") || "(ninguna)"}`);
+        const value = coerceValue(d, a.propertyValue);
+        if (value === null) throw invalid("'propertyValue' no puede estar vacío");
+        property = { propertyId: d.id, value };
+      }
       const rows = await listIssues({
+        property,
         projectId: p?.id,
         stateId,
         stateGroup: a.stateGroup,
@@ -330,6 +362,7 @@ export const TOOLS: ToolDef[] = [
       startDate: z.string().optional().describe("YYYY-MM-DD"),
       dueDate: z.string().optional().describe("YYYY-MM-DD"),
       labels: z.array(z.string()).optional().describe("Label names"),
+      properties: propertiesArg.optional(),
     },
     run: async (a, ctx) => {
       const p = await project(a.project);
@@ -346,6 +379,7 @@ export const TOOLS: ToolDef[] = [
           startDate: a.startDate,
           dueDate: a.dueDate,
           labelIds: a.labels ? await resolveLabelIds(p.id, a.labels) : undefined,
+          properties: a.properties ? await resolvePropertyInputs(p.id, a.properties as Record<string, PropInput>) : undefined,
         },
         ctx.actor,
       );
@@ -368,8 +402,9 @@ export const TOOLS: ToolDef[] = [
       startDate: z.string().nullable().optional(),
       dueDate: z.string().nullable().optional(),
       labels: z.array(z.string()).optional().describe("Replaces the full label set"),
+      properties: propertiesArg.optional().describe("Only the listed properties change; use null to clear one"),
     },
-    run: async ({ key: k, parent, labels, ...rest }, ctx) => {
+    run: async ({ key: k, parent, labels, properties, ...rest }, ctx) => {
       const i = await getIssueByKey(k);
       await updateIssue(
         i.id,
@@ -377,6 +412,7 @@ export const TOOLS: ToolDef[] = [
           ...rest,
           ...(parent !== undefined ? { parentId: parent ? (await getIssueByKey(parent)).id : null } : {}),
           ...(labels ? { labelIds: await resolveLabelIds(i.projectId, labels) } : {}),
+          ...(properties ? { properties: await resolvePropertyInputs(i.projectId, properties as Record<string, PropInput>) } : {}),
         },
         ctx.actor,
       );
@@ -485,6 +521,23 @@ export const TOOLS: ToolDef[] = [
     run: async ({ project: id, ...rest }) => {
       const p = await project(id);
       return { name: (await createMilestone({ projectId: p.id, ...rest })).name };
+    },
+  }),
+  tool({
+    name: "create_property",
+    description:
+      "Create a custom property for a project's issues: type text, number, date or select (select needs 'options'). Set values with create_issue / update_issue 'properties'. The type cannot be changed later and deleting a property is a human-only action.",
+    scope: "write",
+    shape: {
+      project: projectArg,
+      name: z.string().min(1).max(50),
+      type: z.enum(PROPERTY_TYPES),
+      options: z.array(z.string()).optional().describe("Allowed values; only for type 'select'"),
+    },
+    run: async ({ project: id, ...rest }, ctx) => {
+      const p = await project(id);
+      const created = await createPropertyDef({ projectId: p.id, ...rest }, ctx.actor);
+      return { name: created.name, type: created.type, options: created.type === "select" ? created.options : undefined };
     },
   }),
   tool({

@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ChevronRight, ExternalLink, FileText, X } from "lucide-react";
 import { PRIORITIES, type IssueType, type Priority, type StateGroup } from "@/db/schema";
-import type { StateDTO } from "@/server/dto";
+import type { PropertyDTO, StateDTO } from "@/server/dto";
 import {
   addCommentAction,
   addRelationAction,
@@ -39,6 +39,7 @@ type Detail = {
   labelIds: string[];
   dueDate: string | null;
   estimate: number | null;
+  properties: Record<string, string | number>;
   parent: { id: string; key: string; title: string } | null;
   children: { id: string; key: string; title: string; stateGroup: StateGroup; stateColor: string }[];
   relations: { type: string; id: string; key: string; title: string; stateGroup: StateGroup }[];
@@ -72,6 +73,7 @@ function describe(a: Activity): string {
   if (a.action === "issue.updated") {
     const ch = (a.data.changes ?? {}) as Record<string, { from: unknown; to: unknown }>;
     const parts = Object.entries(ch).map(([k, v]) => {
+      if (k.startsWith("property:")) return `cambió «${k.slice("property:".length)}»: ${String(v.from ?? "—")} → ${String(v.to ?? "—")}`;
       const name = ({ stateId: "estado", priority: "prioridad", title: "título", description: "descripción", labels: "etiquetas", parentId: "padre", dueDate: "fecha límite", estimate: "estimación" } as Record<string, string>)[k] ?? k;
       return k === "description" || k === "title" || k === "labels" ? `cambió ${name}` : `cambió ${name}: ${String(v.from ?? "—")} → ${String(v.to ?? "—")}`;
     });
@@ -128,8 +130,10 @@ export function IssueDetail({
   labels: initialLabels,
   candidates,
   mentions,
+  propertyDefs,
 }: {
   issue: Detail;
+  propertyDefs: PropertyDTO[];
   states: StateDTO[];
   activity: Activity[];
   planning: Planning;
@@ -501,11 +505,54 @@ export function IssueDetail({
                 className="ml-auto h-6 w-16 rounded bg-transparent text-right text-sm outline-none focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60"
               />
             </label>
+            {propertyDefs.map((d) => (
+              <PropertyField key={`${d.id}:${issue.properties[d.id] ?? ""}`} def={d} value={issue.properties[d.id] ?? null} onSave={(v) => save({ properties: { [d.id]: v } })} />
+            ))}
           </div>
           <p className="mt-6 text-xs text-muted-foreground">Creado {fmt.format(new Date(issue.createdAt))}</p>
         </aside>
       </div>
     </div>
+  );
+}
+
+const inlineInput = "ml-auto h-6 min-w-0 rounded bg-transparent text-right text-sm outline-none focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60";
+
+/** One custom property: the editor depends on its type. Text and number save on blur, date and select on change. */
+function PropertyField({ def, value, onSave }: { def: PropertyDTO; value: string | number | null; onSave: (v: string | number | null) => void }) {
+  if (def.type === "select") {
+    return (
+      <OptionPicker
+        title={def.name}
+        value={value === null ? "__none" : String(value)}
+        onChange={(v) => onSave(v === "__none" ? null : v)}
+        options={[{ value: "__none", label: "Ninguno" }, ...def.options.map((o) => ({ value: o, label: o }))]}
+        className="w-full"
+      >
+        <span className="truncate text-muted-foreground">{def.name}</span>
+        <span className="ml-auto truncate">{value ?? "—"}</span>
+      </OptionPicker>
+    );
+  }
+  const commit = (raw: string) => {
+    const next = raw.trim() === "" ? null : def.type === "number" ? Number(raw) : raw.trim();
+    if (next !== value) onSave(next);
+  };
+  return (
+    <label className="flex items-center gap-1.5 px-1.5 py-1">
+      <span className="truncate text-muted-foreground">{def.name}</span>
+      <input
+        type={def.type === "text" ? "text" : def.type}
+        aria-label={def.name}
+        defaultValue={value ?? ""}
+        step={def.type === "number" ? "any" : undefined}
+        maxLength={def.type === "text" ? 2000 : undefined}
+        onChange={def.type === "date" ? (e) => commit(e.target.value) : undefined}
+        onBlur={def.type === "date" ? undefined : (e) => commit(e.target.value)}
+        onKeyDown={def.type === "date" ? undefined : (e) => e.key === "Enter" && e.currentTarget.blur()}
+        className={`${inlineInput} ${def.type === "text" ? "w-32" : def.type === "number" ? "w-24" : ""}`}
+      />
+    </label>
   );
 }
 

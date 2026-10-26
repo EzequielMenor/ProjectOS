@@ -9,6 +9,7 @@ import { ensureLabel } from "@/server/services/labels";
 import { createPage, restorePageVersion, searchPages, setPageArchived, updatePage } from "@/server/services/pages";
 import { createView, deleteView } from "@/server/services/views";
 import { createProject, listProjects, updateProject } from "@/server/services/projects";
+import { createPropertyDef, deletePropertyDef, updatePropertyDef } from "@/server/services/properties";
 import { createState, deleteState, moveState, setDefaultState, updateState } from "@/server/services/states";
 import { createToken, revokeToken } from "@/server/services/tokens";
 import { assignIssue, createCycle, createMilestone, createModule } from "@/server/services/planning";
@@ -209,4 +210,18 @@ export async function setDefaultStateAction(id: string) {
 
 export async function deleteStateAction(id: string, input: unknown) {
   return run(async () => deleteState(id, input as { moveIssuesTo: string }));
+}
+
+export async function createPropertyAction(input: unknown) {
+  return run(async () => {
+    await createPropertyDef(input);
+  });
+}
+export async function updatePropertyAction(id: string, patch: unknown) {
+  return run(async () => {
+    await updatePropertyDef(id, patch);
+  });
+}
+export async function deletePropertyAction(id: string) {
+  return run(async () => deletePropertyDef(id));
 }

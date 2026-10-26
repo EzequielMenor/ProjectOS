@@ -1,4 +1,4 @@
-import type { Priority, StateGroup, IssueType } from "@/db/schema";
+import type { Priority, PropertyType, StateGroup, IssueType } from "@/db/schema";
 import { issueKey } from "./services/issues";
 
 export type StateDTO = { id: string; name: string; group: StateGroup; color: string; position: number };
@@ -20,8 +20,11 @@ export type IssueDTO = {
   moduleIds: string[];
   sortOrder: number;
   labels: LabelDTO[];
+  /** Custom property values by property id (absent = unset). */
+  properties: Record<string, string | number>;
   pending?: boolean;
 };
+export type PropertyDTO = { id: string; name: string; type: PropertyType; options: string[] };
 
 type IssueRowLike = {
   id: string;
@@ -39,6 +42,7 @@ type IssueRowLike = {
   modules: { moduleId: string }[];
   sortOrder: number;
   labels: { label: LabelDTO }[];
+  propertyValues: { propertyId: string; value: string | number }[];
 };
 
 export function toIssueDTO(row: IssueRowLike, identifier: string): IssueDTO {
@@ -59,8 +63,11 @@ export function toIssueDTO(row: IssueRowLike, identifier: string): IssueDTO {
     moduleIds: row.modules.map((m) => m.moduleId),
     sortOrder: row.sortOrder,
     labels: row.labels.map((l) => ({ id: l.label.id, name: l.label.name, color: l.label.color })),
+    properties: Object.fromEntries(row.propertyValues.map((v) => [v.propertyId, v.value])),
   };
 }
+
+export const toPropertyDTO = (p: PropertyDTO): PropertyDTO => ({ id: p.id, name: p.name, type: p.type, options: p.options });
 
 export const toStateDTO = (s: StateDTO): StateDTO => ({
   id: s.id,

@@ -14,6 +14,7 @@ import {
 } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PropertySettings, type PropertyRow } from "@/components/property-settings";
 import type { StateGroup } from "@/db/schema";
 
 type Project = { id: string; identifier: string; name: string; description: string; color: string };
@@ -30,7 +31,7 @@ const GROUPS: { value: StateGroup; label: string }[] = [
 const selectClass = "h-8 rounded-md border bg-background px-2 text-sm";
 const primaryBtn = "h-8 shrink-0 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground disabled:opacity-50";
 
-export function ProjectSettings({ project, states }: { project: Project; states: StateRow[] }) {
+export function ProjectSettings({ project, states, properties }: { project: Project; states: StateRow[]; properties: PropertyRow[] }) {
   const [, start] = useTransition();
   const run = (fn: () => Promise<ActionResult<unknown>>, ok?: string) =>
     start(async () => {
@@ -44,6 +45,7 @@ export function ProjectSettings({ project, states }: { project: Project; states:
       <h1 className="text-lg font-semibold tracking-tight">Ajustes de {project.name}</h1>
       <General project={project} run={run} />
       <States projectId={project.id} states={states} run={run} />
+      <PropertySettings projectId={project.id} properties={properties} run={run} />
     </div>
   );
 }

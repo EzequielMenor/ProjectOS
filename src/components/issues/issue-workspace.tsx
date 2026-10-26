@@ -22,7 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { LayoutList, Columns3, Plus, Table2, ArrowDown, ArrowUp } from "lucide-react";
 import { PRIORITIES, type Priority } from "@/db/schema";
-import type { IssueDTO, LabelDTO, StateDTO } from "@/server/dto";
+import type { IssueDTO, LabelDTO, PropertyDTO, StateDTO } from "@/server/dto";
 import { applyFilters, parseFilters, serializeFilters, type Filters } from "@/lib/issue-filters";
 import { FilterBar, type SavedViewDTO } from "./filter-bar";
 import { createIssueAction, moveIssueAction, updateIssueAction } from "@/app/actions";
@@ -60,8 +60,10 @@ export function IssueWorkspace({
   labels,
   cycles,
   modules,
+  properties,
   views,
 }: {
+  properties: PropertyDTO[];
   project: Project;
   states: StateDTO[];
   initialIssues: IssueDTO[];
@@ -136,6 +138,7 @@ export function IssueWorkspace({
         milestoneId: null,
         moduleIds: [],
         sortOrder: minSort - 1000,
+        properties: {},
         labels: [],
         pending: true,
       };
@@ -195,10 +198,10 @@ export function IssueWorkspace({
           <Plus className="size-3.5" /> <span className="hidden sm:inline">Nuevo issue</span> <kbd className="ml-1 hidden rounded bg-white/20 px-1 text-[0.75rem] sm:inline">C</kbd>
         </button>
       </header>
-      <FilterBar filters={filters} onChange={setFilters} states={states} labels={labels} cycles={cycles} modules={modules} views={views} project={project} layout={view} />
+      <FilterBar filters={filters} onChange={setFilters} states={states} labels={labels} cycles={cycles} modules={modules} properties={properties} views={views} project={project} layout={view} />
       <div className="min-h-0 flex-1 overflow-auto">
         {view === "table" ? (
-          <TableView issues={visible} total={issues.length} project={project} states={states} cycles={cycles} onPriority={setPriority} onState={setState} onClear={() => setFilters(parseFilters(new URLSearchParams()))} />
+          <TableView issues={visible} total={issues.length} project={project} states={states} cycles={cycles} properties={properties} onPriority={setPriority} onState={setState} onClear={() => setFilters(parseFilters(new URLSearchParams()))} />
         ) : view === "list" ? (
           <ListView
             columns={columns}
@@ -235,7 +238,7 @@ export function IssueWorkspace({
   );
 }
 
-type SortKey = "key" | "title" | "state" | "priority" | "due" | "estimate";
+type SortKey = "key" | "title" | "state" | "priority" | "due" | "estimate" | `prop:${string}`;
 const PRIORITY_RANK: Record<Priority, number> = { urgent: 0, high: 1, medium: 2, low: 3, none: 4 };
 
 type Sort = { key: SortKey; dir: 1 | -1 };
@@ -256,8 +259,9 @@ function Th({ k, sort, onSort, children, className }: { k?: SortKey; sort: Sort;
 }
 
 function TableView({
-  issues, total, project, states, cycles, onPriority, onState, onClear,
+  issues, total, project, states, cycles, properties, onPriority, onState, onClear,
 }: {
+  properties: PropertyDTO[];
   issues: IssueDTO[];
   total: number;
   project: Project;
@@ -279,10 +283,16 @@ function TableView({
         case "priority": return PRIORITY_RANK[i.priority];
         case "due": return i.dueDate ?? "9999";
         case "estimate": return i.estimate ?? -1;
+        default: {
+          // custom property: unset values sort first, numbers numerically, everything else as lowercase text
+          const def = properties.find((p) => `prop:${p.id}` === sort.key);
+          const v = def ? i.properties[def.id] : undefined;
+          return def?.type === "number" ? (typeof v === "number" ? v : -Infinity) : String(v ?? "").toLowerCase();
+        }
       }
     };
     return [...issues].sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sort.dir);
-  }, [issues, sort, stateById]);
+  }, [issues, sort, stateById, properties]);
 
   if (rows.length === 0)
     return (
@@ -308,6 +318,9 @@ function TableView({
           <Th sort={sort} onSort={setSort} className="w-32">Ciclo</Th>
           <Th sort={sort} onSort={setSort} k="due" className="w-28">Límite</Th>
           <Th sort={sort} onSort={setSort} k="estimate" className="w-16 text-right">Est.</Th>
+          {properties.map((p) => (
+            <Th key={p.id} sort={sort} onSort={setSort} k={`prop:${p.id}`} className={p.type === "number" ? "text-right" : undefined}>{p.name}</Th>
+          ))}
         </tr>
       </thead>
       <tbody>
@@ -353,6 +366,11 @@ function TableView({
               <td className="truncate px-3 text-xs text-muted-foreground">{i.cycleId ? cycleName.get(i.cycleId) ?? "—" : "—"}</td>
               <td className="px-3 text-xs tabular-nums text-muted-foreground">{i.dueDate ?? "—"}</td>
               <td className="px-3 text-right text-xs tabular-nums text-muted-foreground">{i.estimate ?? "—"}</td>
+              {properties.map((p) => (
+                <td key={p.id} data-property={p.name} className={cn("max-w-48 truncate px-3 text-xs text-muted-foreground", p.type === "number" && "text-right tabular-nums")}>
+                  {i.properties[p.id] ?? "—"}
+                </td>
+              ))}
             </tr>
           );
         })}

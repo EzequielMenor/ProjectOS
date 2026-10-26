@@ -6,6 +6,7 @@ import {
   issue,
   issueLabel,
   issueLink,
+  issuePropertyValue,
   issueRelation,
   project,
   state,
@@ -20,6 +21,7 @@ import {
   moveIssueInput,
   updateIssueInput,
 } from "../schemas";
+import { applyPropertyValues } from "./properties";
 
 const issueWith = {
   state: true,
@@ -28,6 +30,7 @@ const issueWith = {
   cycle: { columns: { name: true } },
   milestone: { columns: { name: true } },
   modules: { with: { module: { columns: { name: true } } } },
+  propertyValues: { with: { property: { columns: { name: true } } } },
 } as const;
 
 export const issueKey = (identifier: string, seq: number) => `${identifier}-${seq}`;
@@ -148,6 +151,20 @@ export async function listIssues(raw: unknown = {}) {
             .where(and(eq(issueLabel.issueId, issue.id), eq(issueLabel.labelId, f.labelId))),
         )
       : undefined,
+    f.property
+      ? exists(
+          db
+            .select({ x: sql`1` })
+            .from(issuePropertyValue)
+            .where(
+              and(
+                eq(issuePropertyValue.issueId, issue.id),
+                eq(issuePropertyValue.propertyId, f.property.propertyId),
+                sql`${issuePropertyValue.value} = ${JSON.stringify(f.property.value)}::jsonb`,
+              ),
+            ),
+        )
+      : undefined,
     f.query
       ? or(ilike(issue.title, `%${escapeLike(f.query)}%`), ilike(issue.description, `%${escapeLike(f.query)}%`))
       : undefined,
@@ -161,7 +178,7 @@ export async function listIssues(raw: unknown = {}) {
 }
 
 export async function createIssue(raw: unknown, actor = "user") {
-  const input = createIssueInput.parse(raw);
+  const { properties, ...input } = createIssueInput.parse(raw);
   const db = await getDb();
   return db.transaction(async (tx) => {
     const [counter] = await tx
@@ -209,6 +226,7 @@ export async function createIssue(raw: unknown, actor = "user") {
       })
       .returning();
     if (input.labelIds?.length) await setLabels(tx, created.id, input.projectId, input.labelIds);
+    if (properties) await applyPropertyValues(tx, created.id, input.projectId, properties);
     await tx.insert(activity).values({
       projectId: input.projectId,
       issueId: created.id,
@@ -222,7 +240,7 @@ export async function createIssue(raw: unknown, actor = "user") {
 
 export async function updateIssue(id: string, raw: unknown, actor = "user") {
   const input = updateIssueInput.parse(raw);
-  const { labelIds, ...fields } = input;
+  const { labelIds, properties, ...fields } = input;
   const db = await getDb();
   return db.transaction(async (tx) => {
     const before = await findIssueRow(tx, id);
@@ -242,6 +260,7 @@ export async function updateIssue(id: string, raw: unknown, actor = "user") {
       await setLabels(tx, id, before.projectId, labelIds);
       changes.labels = { from: null, to: labelIds };
     }
+    if (properties) Object.assign(changes, await applyPropertyValues(tx, id, before.projectId, properties));
     if (!Object.keys(changes).length) return before;
 
     const [updated] = await tx
