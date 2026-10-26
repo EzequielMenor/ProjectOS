@@ -5,7 +5,7 @@ Criterio: primero lo que impide usar la app cada día, después lo que la proteg
 
 | # | Qué | Por qué en este lugar | Estado |
 |---|---|---|---|
-| 1 | **Móvil y pantallas estrechas**: menú lateral en cajón, paleta accesible, tablero/lista/detalle sin desbordes | Hoy por debajo de `md` no hay navegación: la app es inusable en móvil | pendiente |
+| 1 | **Móvil y pantallas estrechas**: menú lateral en cajón, paleta accesible, tablero/lista/detalle sin desbordes | Hoy por debajo de `md` no hay navegación: la app es inusable en móvil | **hecho** (cajón, barra superior, sin desbordes a 390 px; `tests/e2e/mobile.spec.ts`) |
 | 2 | **Estados de carga/vacío, accesibilidad y modo oscuro**: revisar contraste, foco, etiquetas ARIA, `loading.tsx`, errores | Es parte del criterio de diseño del encargo y se nota en el uso diario | pendiente |
 | 3 | **Contraseña opcional (`APP_PASSWORD`)** para la interfaz y la API del navegador | En cuanto Docker exponga el puerto, hoy cualquiera en la red puede leer y borrar | pendiente |
 | 4 | **Propiedades personalizadas** por proyecto (texto, número, fecha, selección) en la ficha, en filtros y vía MCP | Requisito del encargo; Plane las tiene | pendiente |

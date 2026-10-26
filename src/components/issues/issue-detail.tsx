@@ -213,12 +213,14 @@ export function IssueDetail({
       </header>
       <div className="grid min-h-0 flex-1 grid-cols-1 overflow-auto lg:grid-cols-[1fr_16rem] lg:overflow-hidden">
         <article className="mx-auto w-full max-w-3xl px-6 py-8 lg:overflow-y-auto">
-          <input
+          <textarea
             aria-label="Título"
+            rows={1}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => setTitle(e.target.value.replace(/\n/g, " "))}
+            onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             onBlur={() => title.trim() && title !== issue.title && save({ title: title.trim() })}
-            className="w-full bg-transparent text-xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground"
+            className="field-sizing-content w-full resize-none bg-transparent text-xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground"
           />
           <DescriptionField value={description} saved={issue.description} onChange={setDescription} onSave={() => save({ description })} />
           {issue.links.length ? (

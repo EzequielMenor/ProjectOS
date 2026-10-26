@@ -191,6 +191,7 @@ export function CommandPalette({ projects }: { projects: P[] }) {
 export function PaletteButton() {
   return (
     <button
+      data-palette-button
       onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE))}
       className="mx-2 mb-1 flex h-7 items-center gap-2 rounded-md border bg-background/50 px-2 text-[0.875rem] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
     >

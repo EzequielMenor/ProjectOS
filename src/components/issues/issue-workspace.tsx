@@ -180,18 +180,19 @@ export function IssueWorkspace({
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex h-12 shrink-0 items-center gap-3 border-b px-4">
         <span className="size-2.5 rounded-sm" style={{ background: "var(--primary)" }} aria-hidden />
-        <h1 className="text-sm font-medium">{project.name}</h1>
-        <span className="text-xs text-muted-foreground tabular-nums">{flat.length === issues.length ? `${flat.length} issues` : `${flat.length} de ${issues.length} issues`}</span>
-        <nav className="ml-auto flex items-center gap-1 rounded-md border p-0.5" aria-label="Vista">
+        <h1 className="min-w-0 truncate text-sm font-medium">{project.name}</h1>
+        <span className="hidden text-xs text-muted-foreground tabular-nums sm:inline">{flat.length === issues.length ? `${flat.length} issues` : `${flat.length} de ${issues.length} issues`}</span>
+        <nav className="ml-auto flex shrink-0 items-center gap-1 rounded-md border p-0.5" aria-label="Vista">
           <ViewLink href={`/${project.identifier}/list${query ? `?${query}` : ""}`} active={view === "list"} icon={<LayoutList className="size-3.5" />} label="Lista" />
           <ViewLink href={`/${project.identifier}/board${query ? `?${query}` : ""}`} active={view === "board"} icon={<Columns3 className="size-3.5" />} label="Kanban" />
           <ViewLink href={`/${project.identifier}/table${query ? `?${query}` : ""}`} active={view === "table"} icon={<Table2 className="size-3.5" />} label="Tabla" />
         </nav>
         <button
           onClick={() => setCreatingIn(defaultStateId ?? null)}
-          className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+          aria-label="Nuevo issue"
+          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground hover:opacity-90"
         >
-          <Plus className="size-3.5" /> Nuevo issue <kbd className="ml-1 rounded bg-white/20 px-1 text-[0.75rem]">C</kbd>
+          <Plus className="size-3.5" /> <span className="hidden sm:inline">Nuevo issue</span> <kbd className="ml-1 hidden rounded bg-white/20 px-1 text-[0.75rem] sm:inline">C</kbd>
         </button>
       </header>
       <FilterBar filters={filters} onChange={setFilters} states={states} labels={labels} cycles={cycles} modules={modules} views={views} project={project} layout={view} />
@@ -365,13 +366,14 @@ function ViewLink({ href, active, icon, label }: { href: string; active: boolean
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
+      aria-label={label}
       className={cn(
         "inline-flex h-6 items-center gap-1.5 rounded px-2 text-xs transition-colors",
         active ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground",
       )}
     >
       {icon}
-      {label}
+      <span className="hidden sm:inline">{label}</span>
     </Link>
   );
 }

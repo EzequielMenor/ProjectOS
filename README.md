@@ -72,6 +72,9 @@ Para agentes: `create_issue` con `type: "epic"`, `parent` para añadir trabajo, 
 **Tamaño de la interfaz**: control `A−  %  A+` al pie de la barra lateral (14–24 px, por defecto 18). Se guarda en una
 cookie del navegador y el servidor lo aplica en el primer pintado; `Restablecer` vuelve al valor por defecto.
 
+**Móvil**: por debajo de 768 px la barra lateral pasa a una barra superior con botón de menú (cajón con la misma navegación,
+tamaño de interfaz incluido) y botón de búsqueda; las vistas y la ficha se ajustan al ancho sin desplazamiento horizontal.
+
 **Ajustes del proyecto** (`/<PROY>/settings`): nombre, color y descripción (Markdown), y los estados del flujo: crear,
 renombrar, recolorear, reordenar, cambiar el estado por defecto y borrar. Un proyecto siempre conserva un estado «completed»
 y uno por defecto; borrar un estado obliga a elegir a cuál se mueven sus issues. Es solo para humanos (los agentes no tienen

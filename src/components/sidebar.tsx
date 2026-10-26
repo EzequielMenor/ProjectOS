@@ -2,23 +2,76 @@
 
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useTheme } from "next-themes";
-import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, Layers, LayoutList, Moon, Plus, Settings, Sun, Table2 } from "lucide-react";
+import { useState } from "react";
+import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, Layers, LayoutList, Menu, Moon, Plus, Search, Settings, Sun, Table2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PaletteButton } from "@/components/command-palette";
+import { OPEN_PALETTE, PaletteButton } from "@/components/command-palette";
 import { TextSizeControl } from "@/components/text-size-control";
 
 type P = { id: string; identifier: string; name: string; color: string };
 
-export function Sidebar({ projects, uiSize }: { projects: P[]; uiSize: number }) {
+type SidebarProps = { projects: P[]; uiSize: number };
+
+/** Desktop: fixed sidebar. Narrow screens: a top bar whose menu button opens the same navigation as a drawer. */
+export function Sidebar(props: SidebarProps) {
+  return (
+    <>
+      <MobileBar {...props} />
+      <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex" aria-label="Navegación">
+        <SidebarBody {...props} />
+      </aside>
+    </>
+  );
+}
+
+function MobileBar(props: SidebarProps) {
+  const [open, setOpen] = useState(false);
+  return (
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-sidebar px-2 text-sidebar-foreground md:hidden">
+      <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+        <DialogPrimitive.Trigger aria-label="Abrir menú" className="grid size-9 place-items-center rounded-md hover:bg-sidebar-accent">
+          <Menu className="size-5" />
+        </DialogPrimitive.Trigger>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+          <DialogPrimitive.Popup
+            aria-label="Navegación"
+            // any link (or the search button) inside closes the drawer, so navigating never leaves it open over the new page
+            onClickCapture={(e) => (e.target as HTMLElement).closest("a, [data-palette-button]") && setOpen(false)}
+            className="fixed inset-y-0 left-0 z-50 flex w-80 max-w-[85vw] flex-col bg-sidebar text-sidebar-foreground shadow-xl outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+          >
+            <DialogPrimitive.Title className="sr-only">Navegación</DialogPrimitive.Title>
+            <DialogPrimitive.Close aria-label="Cerrar menú" className="absolute top-2 right-2 grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-sidebar-accent">
+              <X className="size-4" />
+            </DialogPrimitive.Close>
+            <SidebarBody {...props} />
+          </DialogPrimitive.Popup>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
+      <span className="text-sm font-semibold tracking-tight">ProjectOS</span>
+      <button
+        type="button"
+        aria-label="Buscar"
+        onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE))}
+        className="ml-auto grid size-9 place-items-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+      >
+        <Search className="size-5" />
+      </button>
+    </header>
+  );
+}
+
+function SidebarBody({ projects, uiSize }: SidebarProps) {
   const pathname = usePathname();
   const params = useParams<{ project?: string }>();
   const { resolvedTheme, setTheme } = useTheme();
   const current = params.project?.toUpperCase();
 
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex" aria-label="Navegación">
-      <div className="flex h-12 items-center gap-2 px-4">
+    <>
+      <div className="flex h-12 items-center gap-2 pr-12 pl-4 md:pr-4">
         <div className="grid size-5 place-items-center rounded-md bg-primary text-[0.8125rem] font-bold text-primary-foreground">P</div>
         <span className="text-sm font-semibold tracking-tight">ProjectOS</span>
         <button
@@ -77,7 +130,7 @@ export function Sidebar({ projects, uiSize }: { projects: P[]; uiSize: number })
         <SubLink href="/settings/backup" icon={<DatabaseBackup className="size-3.5" />} label="Copias de seguridad" active={pathname.startsWith("/settings/backup")} />
         <TextSizeControl initial={uiSize} />
       </div>
-    </aside>
+    </>
   );
 }
 
