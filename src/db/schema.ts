@@ -95,6 +95,63 @@ export const state = pgTable(
   (t) => [index("state_project_idx").on(t.projectId)],
 );
 
+export const MODULE_STATUSES = ["backlog", "planned", "in_progress", "paused", "completed", "cancelled"] as const;
+export type ModuleStatus = (typeof MODULE_STATUSES)[number];
+
+/** A time-boxed sprint. An issue belongs to at most one cycle. */
+export const cycle = pgTable(
+  "cycle",
+  {
+    id: id(),
+    projectId: uuid("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    startDate: date("start_date"),
+    endDate: date("end_date"),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("cycle_project_name").on(t.projectId, t.name)],
+);
+
+/** A thematic group of work (a feature or phase). An issue can be in several modules. */
+export const module = pgTable(
+  "module",
+  {
+    id: id(),
+    projectId: uuid("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    status: text("status", { enum: MODULE_STATUSES }).notNull().default("backlog"),
+    startDate: date("start_date"),
+    targetDate: date("target_date"),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("module_project_name").on(t.projectId, t.name)],
+);
+
+export const issueModule = pgTable(
+  "issue_module",
+  {
+    issueId: uuid("issue_id").notNull().references(() => issue.id, { onDelete: "cascade" }),
+    moduleId: uuid("module_id").notNull().references(() => module.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.issueId, t.moduleId] }), index("issue_module_module_idx").on(t.moduleId)],
+);
+
+/** A dated goal on the roadmap; progress comes from the issues assigned to it. */
+export const milestone = pgTable(
+  "milestone",
+  {
+    id: id(),
+    projectId: uuid("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    targetDate: date("target_date"),
+    createdAt: createdAt(),
+  },
+  (t) => [unique("milestone_project_name").on(t.projectId, t.name)],
+);
+
 export const issue = pgTable(
   "issue",
   {
@@ -107,6 +164,8 @@ export const issue = pgTable(
     stateId: uuid("state_id").notNull().references(() => state.id),
     priority: text("priority", { enum: PRIORITIES }).notNull().default("none"),
     parentId: uuid("parent_id"),
+    cycleId: uuid("cycle_id").references(() => cycle.id, { onDelete: "set null" }),
+    milestoneId: uuid("milestone_id").references(() => milestone.id, { onDelete: "set null" }),
     assigneeId: uuid("assignee_id").references(() => member.id, { onDelete: "set null" }),
     estimate: integer("estimate"),
     startDate: date("start_date"),
@@ -214,6 +273,14 @@ export const issueRelations = relations(issue, ({ one, many }) => ({
   comments: many(comment),
   links: many(issueLink),
   labels: many(issueLabel),
+  cycle: one(cycle, { fields: [issue.cycleId], references: [cycle.id] }),
+  milestone: one(milestone, { fields: [issue.milestoneId], references: [milestone.id] }),
+  modules: many(issueModule),
+}));
+
+export const issueModuleRelations = relations(issueModule, ({ one }) => ({
+  issue: one(issue, { fields: [issueModule.issueId], references: [issue.id] }),
+  module: one(module, { fields: [issueModule.moduleId], references: [module.id] }),
 }));
 
 export const issueLabelRelations = relations(issueLabel, ({ one }) => ({

@@ -3,6 +3,7 @@ import { IssueDetail } from "@/components/issues/issue-detail";
 import { ServiceError } from "@/server/errors";
 import { toStateDTO } from "@/server/dto";
 import { getIssueByKey, listActivity } from "@/server/services/issues";
+import { listCycles, listMilestones, listModules } from "@/server/services/planning";
 import { listStates } from "@/server/services/projects";
 
 export async function generateMetadata({ params }: { params: Promise<{ project: string; seq: string }> }) {
@@ -16,7 +17,13 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
     if (e instanceof ServiceError && (e.code === "not_found" || e.code === "invalid")) notFound();
     throw e;
   });
-  const [states, activity] = await Promise.all([listStates(issue.projectId), listActivity(issue.id)]);
+  const [states, activity, cycles, modules, milestones] = await Promise.all([
+    listStates(issue.projectId),
+    listActivity(issue.id),
+    listCycles(issue.projectId),
+    listModules(issue.projectId),
+    listMilestones(issue.projectId),
+  ]);
   const stateName = new Map(states.map((s) => [s.id, s.name]));
   return (
     <IssueDetail
@@ -28,6 +35,9 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
         description: issue.description,
         stateId: issue.stateId,
         priority: issue.priority,
+        cycleId: issue.cycleId,
+        milestoneId: issue.milestoneId,
+        moduleIds: issue.modules.map((m) => m.moduleId),
         projectIdentifier: issue.project.identifier,
         projectName: issue.project.name,
         createdAt: issue.createdAt.toISOString(),
@@ -35,6 +45,11 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
         links: issue.links.map((l) => ({ id: l.id, kind: l.kind, url: l.url, title: l.title })),
       }}
       states={states.map(toStateDTO)}
+      planning={{
+        cycles: cycles.map((c) => ({ id: c.id, name: c.name })),
+        modules: modules.map((m) => ({ id: m.id, name: m.name })),
+        milestones: milestones.map((m) => ({ id: m.id, name: m.name })),
+      }}
       activity={activity.map((a) => ({
         id: a.id,
         actor: a.actor,

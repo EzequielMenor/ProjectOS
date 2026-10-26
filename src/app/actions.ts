@@ -6,6 +6,7 @@ import { ServiceError } from "@/server/errors";
 import { addComment, createIssue, moveIssue, setIssueArchived, updateIssue } from "@/server/services/issues";
 import { createProject } from "@/server/services/projects";
 import { createToken, revokeToken } from "@/server/services/tokens";
+import { assignIssue, createCycle, createMilestone, createModule } from "@/server/services/planning";
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -70,5 +71,19 @@ export async function createTokenAction(input: unknown) {
 export async function revokeTokenAction(id: string) {
   return run(async () => {
     await revokeToken(id);
+  });
+}
+
+export async function createPlanningAction(kind: "cycle" | "module" | "milestone", input: unknown) {
+  return run(async () => {
+    if (kind === "cycle") await createCycle(input);
+    else if (kind === "module") await createModule(input);
+    else await createMilestone(input);
+  });
+}
+
+export async function assignIssueAction(issueId: string, input: unknown) {
+  return run(async () => {
+    await assignIssue(issueId, input);
   });
 }

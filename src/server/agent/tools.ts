@@ -14,6 +14,7 @@ import {
   updateIssue,
 } from "../services/issues";
 import { listLabels, resolveLabelIds } from "../services/labels";
+import { assignIssue, createCycle, createMilestone, createModule, listCycles, listMilestones, listModules } from "../services/planning";
 import { getProjectByIdentifier, listProjects, listStates } from "../services/projects";
 import type { AuthContext } from "../services/tokens";
 import { listRelations, nextWork } from "../services/work";
@@ -62,6 +63,9 @@ type IssueLike = {
   state: { name: string; group: string };
   labels: { label: { name: string } }[];
   assignee?: { name: string } | null;
+  cycle?: { name: string } | null;
+  milestone?: { name: string } | null;
+  modules?: { module: { name: string } }[];
 };
 
 const summary = (i: IssueLike, identifier: string) => ({
@@ -76,8 +80,16 @@ const summary = (i: IssueLike, identifier: string) => ({
   startDate: i.startDate,
   dueDate: i.dueDate,
   labels: i.labels.map((l) => l.label.name),
+  cycle: i.cycle?.name ?? null,
+  modules: (i.modules ?? []).map((m) => m.module.name),
+  milestone: i.milestone?.name ?? null,
   archived: Boolean(i.archivedAt),
 });
+
+const pct = (p: { total: number; completed: number; cancelled: number }) => {
+  const live = p.total - p.cancelled;
+  return live > 0 ? Math.round((p.completed / live) * 100) : 0;
+};
 
 const evidence = z.object({
   kind: z.enum(LINK_KINDS).default("evidence"),
@@ -188,6 +200,36 @@ export const TOOLS: ToolDef[] = [
       const p = id ? await project(id) : null;
       const rows = await nextWork({ projectId: p?.id, limit });
       return rows.map((r) => summary(r, r.project.identifier));
+    },
+  }),
+  tool({
+    name: "list_cycles",
+    description: "List a project's cycles (sprints) with dates and progress.",
+    scope: "read",
+    shape: { project: projectArg },
+    run: async ({ project: id }) => {
+      const p = await project(id);
+      return (await listCycles(p.id)).map((c) => ({ name: c.name, startDate: c.startDate, endDate: c.endDate, progress: c.progress, percentDone: pct(c.progress) }));
+    },
+  }),
+  tool({
+    name: "list_modules",
+    description: "List a project's modules (feature/phase groupings) with status and progress.",
+    scope: "read",
+    shape: { project: projectArg },
+    run: async ({ project: id }) => {
+      const p = await project(id);
+      return (await listModules(p.id)).map((m) => ({ name: m.name, status: m.status, startDate: m.startDate, targetDate: m.targetDate, progress: m.progress, percentDone: pct(m.progress) }));
+    },
+  }),
+  tool({
+    name: "list_milestones",
+    description: "List a project's roadmap milestones with target dates and progress.",
+    scope: "read",
+    shape: { project: projectArg },
+    run: async ({ project: id }) => {
+      const p = await project(id);
+      return (await listMilestones(p.id)).map((m) => ({ name: m.name, targetDate: m.targetDate, progress: m.progress, percentDone: pct(m.progress) }));
     },
   }),
 
@@ -333,6 +375,61 @@ export const TOOLS: ToolDef[] = [
       const [a, b] = await Promise.all([getIssueByKey(k), getIssueByKey(related)]);
       await addRelation(a.id, { relatedIssueId: b.id, type }, ctx.actor);
       return { key: k, type, related };
+    },
+  }),
+  tool({
+    name: "create_cycle",
+    description: "Create a cycle (sprint) in a project.",
+    scope: "write",
+    shape: { project: projectArg, name: z.string(), startDate: z.string().optional().describe("YYYY-MM-DD"), endDate: z.string().optional(), description: z.string().optional() },
+    run: async ({ project: id, ...rest }) => {
+      const p = await project(id);
+      return { name: (await createCycle({ projectId: p.id, ...rest })).name };
+    },
+  }),
+  tool({
+    name: "create_module",
+    description: "Create a module (a feature or phase that groups issues).",
+    scope: "write",
+    shape: { project: projectArg, name: z.string(), description: z.string().optional(), status: z.enum(["backlog", "planned", "in_progress", "paused", "completed", "cancelled"]).optional(), startDate: z.string().optional(), targetDate: z.string().optional() },
+    run: async ({ project: id, ...rest }) => {
+      const p = await project(id);
+      return { name: (await createModule({ projectId: p.id, ...rest })).name };
+    },
+  }),
+  tool({
+    name: "create_milestone",
+    description: "Create a roadmap milestone with an optional target date.",
+    scope: "write",
+    shape: { project: projectArg, name: z.string(), description: z.string().optional(), targetDate: z.string().optional() },
+    run: async ({ project: id, ...rest }) => {
+      const p = await project(id);
+      return { name: (await createMilestone({ projectId: p.id, ...rest })).name };
+    },
+  }),
+  tool({
+    name: "assign_issue",
+    description:
+      "Place an issue in a cycle, milestone and/or modules by name (create them first with create_cycle / create_module / create_milestone). Pass null to clear cycle or milestone; 'modules' replaces the full module set. Omitted fields are unchanged.",
+    scope: "write",
+    shape: { key, cycle: z.string().nullable().optional(), milestone: z.string().nullable().optional(), modules: z.array(z.string()).optional() },
+    run: async ({ key: k, cycle, milestone, modules }, ctx) => {
+      const i = await getIssueByKey(k);
+      const byName = async <T extends { id: string; name: string }>(list: Promise<T[]>, wanted: string, what: string) => {
+        const found = (await list).find((x) => x.name.toLowerCase() === wanted.trim().toLowerCase());
+        if (!found) throw invalid(`${what} "${wanted}" no existe en el proyecto`);
+        return found.id;
+      };
+      await assignIssue(
+        i.id,
+        {
+          ...(cycle !== undefined ? { cycleId: cycle === null ? null : await byName(listCycles(i.projectId), cycle, "Ciclo") } : {}),
+          ...(milestone !== undefined ? { milestoneId: milestone === null ? null : await byName(listMilestones(i.projectId), milestone, "Hito") } : {}),
+          ...(modules ? { moduleIds: await Promise.all(modules.map((m) => byName(listModules(i.projectId), m, "Módulo"))) } : {}),
+        },
+        ctx.actor,
+      );
+      return { key: k, assigned: true };
     },
   }),
   tool({

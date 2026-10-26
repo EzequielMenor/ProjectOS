@@ -25,6 +25,9 @@ const issueWith = {
   state: true,
   assignee: true,
   labels: { with: { label: true } },
+  cycle: { columns: { name: true } },
+  milestone: { columns: { name: true } },
+  modules: { with: { module: { columns: { name: true } } } },
 } as const;
 
 export const issueKey = (identifier: string, seq: number) => `${identifier}-${seq}`;

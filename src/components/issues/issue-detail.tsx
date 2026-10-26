@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ChevronRight, ExternalLink } from "lucide-react";
 import { PRIORITIES, type Priority } from "@/db/schema";
 import type { StateDTO } from "@/server/dto";
-import { addCommentAction, updateIssueAction } from "@/app/actions";
+import { addCommentAction, assignIssueAction, updateIssueAction } from "@/app/actions";
 import { PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
 import { Textarea } from "@/components/ui/textarea";
 import { OptionPicker } from "./option-picker";
@@ -19,12 +19,17 @@ type Detail = {
   description: string;
   stateId: string;
   priority: Priority;
+  cycleId: string | null;
+  milestoneId: string | null;
+  moduleIds: string[];
   projectIdentifier: string;
   projectName: string;
   createdAt: string;
   comments: { id: string; actor: string; body: string; createdAt: string }[];
   links: { id: string; kind: string; url: string; title: string }[];
 };
+type Named = { id: string; name: string };
+type Planning = { cycles: Named[]; modules: Named[]; milestones: Named[] };
 type Activity = { id: string; actor: string; action: string; createdAt: string; data: Record<string, unknown> };
 
 const fmt = new Intl.DateTimeFormat("es", { dateStyle: "medium", timeStyle: "short" });
@@ -33,6 +38,7 @@ function describe(a: Activity): string {
   if (a.action === "issue.created") return "creó el issue";
   if (a.action === "comment.added") return "comentó";
   if (a.action === "link.added") return "añadió un enlace";
+  if (a.action === "issue.planned") return "cambió la planificación (ciclo, hito o módulos)";
   if (a.action === "issue.updated") {
     const ch = (a.data.changes ?? {}) as Record<string, { from: unknown; to: unknown }>;
     const parts = Object.entries(ch).map(([k, v]) => {
@@ -44,7 +50,7 @@ function describe(a: Activity): string {
   return a.action;
 }
 
-export function IssueDetail({ issue, states, activity }: { issue: Detail; states: StateDTO[]; activity: Activity[] }) {
+export function IssueDetail({ issue, states, activity, planning }: { issue: Detail; states: StateDTO[]; activity: Activity[]; planning: Planning }) {
   const router = useRouter();
   const [, start] = useTransition();
   const [title, setTitle] = useState(issue.title);
@@ -57,6 +63,15 @@ export function IssueDetail({ issue, states, activity }: { issue: Detail; states
       const res = await updateIssueAction(issue.id, patch);
       if (!res.ok) toast.error(res.error);
     });
+
+  const assign = (patch: Record<string, unknown>) =>
+    start(async () => {
+      const res = await assignIssueAction(issue.id, patch);
+      if (!res.ok) toast.error(res.error);
+    });
+  const NONE = "__none";
+  const single = (list: Named[]) => [{ value: NONE, label: "Ninguno" }, ...list.map((x) => ({ value: x.id, label: x.name }))];
+  const nameOf = (list: Named[], id: string | null, empty: string) => list.find((x) => x.id === id)?.name ?? empty;
 
   const timeline = [
     ...activity.filter((a) => a.action !== "comment.added").map((a) => ({ t: a.createdAt, kind: "activity" as const, a })),
@@ -175,6 +190,36 @@ export function IssueDetail({ issue, states, activity }: { issue: Detail; states
             >
               <PriorityIcon priority={issue.priority} />
               {PRIORITY_LABEL[issue.priority]}
+            </OptionPicker>
+            <OptionPicker
+              title="Ciclo"
+              value={issue.cycleId ?? NONE}
+              onChange={(v) => assign({ cycleId: v === NONE ? null : v })}
+              options={single(planning.cycles)}
+              className="w-full"
+            >
+              <span className="text-muted-foreground">Ciclo</span>
+              <span className="ml-auto truncate">{nameOf(planning.cycles, issue.cycleId, "—")}</span>
+            </OptionPicker>
+            <OptionPicker
+              title="Hito"
+              value={issue.milestoneId ?? NONE}
+              onChange={(v) => assign({ milestoneId: v === NONE ? null : v })}
+              options={single(planning.milestones)}
+              className="w-full"
+            >
+              <span className="text-muted-foreground">Hito</span>
+              <span className="ml-auto truncate">{nameOf(planning.milestones, issue.milestoneId, "—")}</span>
+            </OptionPicker>
+            <OptionPicker
+              title="Módulos"
+              value=""
+              onChange={(v) => assign({ moduleIds: issue.moduleIds.includes(v) ? issue.moduleIds.filter((x) => x !== v) : [...issue.moduleIds, v] })}
+              options={planning.modules.map((m) => ({ value: m.id, label: `${issue.moduleIds.includes(m.id) ? "✓ " : ""}${m.name}` }))}
+              className="w-full"
+            >
+              <span className="text-muted-foreground">Módulos</span>
+              <span className="ml-auto truncate">{issue.moduleIds.length ? planning.modules.filter((m) => issue.moduleIds.includes(m.id)).map((m) => m.name).join(", ") : "—"}</span>
             </OptionPicker>
           </div>
           <p className="mt-6 text-xs text-muted-foreground">Creado {fmt.format(new Date(issue.createdAt))}</p>

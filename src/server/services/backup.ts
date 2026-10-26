@@ -17,7 +17,11 @@ const TABLES = [
   ["member", s.member],
   ["project", s.project],
   ["state", s.state],
+  ["cycle", s.cycle],
+  ["module", s.module],
+  ["milestone", s.milestone],
   ["issue", s.issue],
+  ["issue_module", s.issueModule],
   ["label", s.label],
   ["issue_label", s.issueLabel],
   ["issue_relation", s.issueRelation],
@@ -25,6 +29,9 @@ const TABLES = [
   ["issue_link", s.issueLink],
   ["activity", s.activity],
 ] as const satisfies readonly (readonly [string, PgTable])[];
+
+/** Tables added after v1 of the format: older backups may not contain them. */
+const OPTIONAL_TABLES = new Set(["cycle", "module", "milestone", "issue_module"]);
 
 type Row = Record<string, unknown>;
 
@@ -80,6 +87,10 @@ export function parseBackup(raw: unknown): Backup {
   if (!parsed.success) throw invalid(`Archivo de copia no válido: ${parsed.error.issues[0]?.message ?? "formato"}`);
   const b = parsed.data;
   for (const [name] of TABLES) {
+    if (!b.tables[name] && OPTIONAL_TABLES.has(name)) {
+      b.tables[name] = [];
+      b.counts[name] = 0;
+    }
     const rows = b.tables[name];
     if (!rows) throw invalid(`Falta la tabla "${name}" en la copia`);
     if (b.counts[name] !== rows.length) throw invalid(`La tabla "${name}" está incompleta (${rows.length} de ${b.counts[name]} filas)`);

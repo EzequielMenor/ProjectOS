@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Columns3, DatabaseBackup, KeyRound, LayoutList, Moon, Plus, Sun } from "lucide-react";
+import { Boxes, CalendarRange, Columns3, DatabaseBackup, Flag, GanttChart, KeyRound, LayoutList, Moon, Plus, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type P = { id: string; identifier: string; name: string; color: string };
@@ -55,6 +55,10 @@ export function Sidebar({ projects }: { projects: P[] }) {
                 <div className="ml-4 border-l pl-2">
                   <SubLink href={`/${p.identifier}/list`} icon={<LayoutList className="size-3.5" />} label="Lista" active={pathname.endsWith("/list")} />
                   <SubLink href={`/${p.identifier}/board`} icon={<Columns3 className="size-3.5" />} label="Kanban" active={pathname.endsWith("/board")} />
+                  <SubLink href={`/${p.identifier}/cycles`} icon={<CalendarRange className="size-3.5" />} label="Ciclos" active={pathname.endsWith("/cycles")} />
+                  <SubLink href={`/${p.identifier}/modules`} icon={<Boxes className="size-3.5" />} label="Módulos" active={pathname.endsWith("/modules")} />
+                  <SubLink href={`/${p.identifier}/milestones`} icon={<Flag className="size-3.5" />} label="Hitos" active={pathname.endsWith("/milestones")} />
+                  <SubLink href={`/${p.identifier}/roadmap`} icon={<GanttChart className="size-3.5" />} label="Roadmap" active={pathname.endsWith("/roadmap")} />
                 </div>
               ) : null}
             </div>
