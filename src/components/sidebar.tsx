@@ -6,10 +6,11 @@ import { useTheme } from "next-themes";
 import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, LayoutList, Moon, Plus, Settings, Sun, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaletteButton } from "@/components/command-palette";
+import { TextSizeControl } from "@/components/text-size-control";
 
 type P = { id: string; identifier: string; name: string; color: string };
 
-export function Sidebar({ projects }: { projects: P[] }) {
+export function Sidebar({ projects, uiSize }: { projects: P[]; uiSize: number }) {
   const pathname = usePathname();
   const params = useParams<{ project?: string }>();
   const { resolvedTheme, setTheme } = useTheme();
@@ -73,6 +74,7 @@ export function Sidebar({ projects }: { projects: P[] }) {
       <div className="border-t p-2">
         <SubLink href="/settings/tokens" icon={<KeyRound className="size-3.5" />} label="Tokens de API" active={pathname.startsWith("/settings/tokens")} />
         <SubLink href="/settings/backup" icon={<DatabaseBackup className="size-3.5" />} label="Copias de seguridad" active={pathname.startsWith("/settings/backup")} />
+        <TextSizeControl initial={uiSize} />
       </div>
     </aside>
   );

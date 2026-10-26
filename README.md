@@ -64,6 +64,9 @@ MCP ejecutó `next_work` → `set_state` → `log_progress` (con evidencia de co
 comprobó por REST que el issue quedó En progreso con comentario y enlace, y que la página enlaza al otro issue, todo con
 actor `agent:<token>`.
 
+**Tamaño de la interfaz**: control `A−  %  A+` al pie de la barra lateral (14–24 px, por defecto 18). Se guarda en una
+cookie del navegador y el servidor lo aplica en el primer pintado; `Restablecer` vuelve al valor por defecto.
+
 **Ajustes del proyecto** (`/<PROY>/settings`): nombre, color y descripción (Markdown), y los estados del flujo: crear,
 renombrar, recolorear, reordenar, cambiar el estado por defecto y borrar. Un proyecto siempre conserva un estado «completed»
 y uno por defecto; borrar un estado obliga a elegir a cuál se mueven sus issues. Es solo para humanos (los agentes no tienen

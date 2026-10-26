@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { UI_SIZE_COOKIE, parseUiSize } from "@/lib/ui-scale";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -16,9 +18,10 @@ export const metadata: Metadata = {
 // All pages read live data from the database.
 export const dynamic = "force-dynamic";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const size = parseUiSize((await cookies()).get(UI_SIZE_COOKIE)?.value);
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full`} suppressHydrationWarning>
+    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full`} style={{ fontSize: `${size}px` }} suppressHydrationWarning>
       <body className="h-full">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <TooltipProvider delay={300}>{children}</TooltipProvider>
