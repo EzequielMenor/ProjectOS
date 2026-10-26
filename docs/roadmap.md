@@ -11,8 +11,9 @@ Criterio: primero lo que impide usar la app cada día, después lo que la proteg
 | 4 | **Propiedades personalizadas** por proyecto (texto, número, fecha, selección) en la ficha, en filtros y vía MCP | Requisito del encargo; Plane las tiene | **hecho** |
 | 5 | **Miembros y asignados** (personas y agentes), filtro «asignado a» | Los asignados de Plane se descartaron al importar; útil para repartir trabajo con agentes | **hecho** |
 | 6 | **Vistas guardadas en la barra lateral** y atajos (tamaño de interfaz, ir a Épicas…) | Pulido; mejora la velocidad estilo Linear | **hecho** |
-| 7 | **Importador de Linear** (solo lectura, simulación, validación, copia previa) | Necesita una API key o un export de Linear | bloqueado: credenciales |
-| 8 | **Verificar Docker Compose** | El daemon no es accesible con este usuario (`sudo usermod -aG docker $USER`) | bloqueado: permisos |
+| 7 | ~~Importador de Linear~~ | No se usa Linear | **descartado** (decisión del usuario) |
+| 8 | **Verificar Docker Compose** | No hace falta para el uso diario (se usa `pnpm start` + systemd) | opcional: necesita `sudo usermod -aG docker $USER` |
+| 9 | **Uso real con agentes**: copia automática diaria con rotación, instrucciones MCP que reciben los agentes al conectarse, guía `docs/agents.md`, servicio systemd | Lo mínimo para empezar a trabajar en proyectos de verdad | **hecho** |
 
 Decisiones que se quedan con el usuario (modifican sus datos): convertir en épicas los issues de AIES con subtareas (AIES-1, AIES-2…),
 importar el proyecto de demostración EZEQU de Plane, revocar la clave de Plane.

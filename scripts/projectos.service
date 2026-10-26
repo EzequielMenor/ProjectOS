@@ -1,0 +1,25 @@
+# Servicio de usuario de systemd para dejar ProjectOS siempre encendido (producción local).
+#
+#   1. cd /ruta/a/ProjectOS && pnpm install && pnpm build
+#   2. Para el servidor de desarrollo si lo tienes en :3000 (PGlite admite un solo proceso por carpeta de datos).
+#   3. mkdir -p ~/.config/systemd/user && cp scripts/projectos.service ~/.config/systemd/user/
+#      Edita WorkingDirectory y, si tu Node no es /usr/bin/node (Node 24+), la ruta de ExecStart:
+#      systemd no carga fnm/mise, así que usa la ruta absoluta de `readlink -f $(which node)`.
+#   4. systemctl --user daemon-reload && systemctl --user enable --now projectos
+#      loginctl enable-linger $USER      # (opcional) que arranque sin sesión abierta
+#
+# Logs: journalctl --user -u projectos -f      Tras actualizar el código: pnpm build && systemctl --user restart projectos
+[Unit]
+Description=ProjectOS
+After=network.target
+
+[Service]
+WorkingDirectory=%h/Proyectos/ProjectOS
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

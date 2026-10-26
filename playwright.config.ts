@@ -15,7 +15,7 @@ export default defineConfig({
   webServer: {
     command: `rm -rf ${PGLITE_DIR} && pnpm exec next dev -p ${PORT}`,
     url: `http://localhost:${PORT}/projects/new`,
-    env: { PGLITE_DIR, NEXT_DIST_DIR: ".next-e2e" },
+    env: { PGLITE_DIR, NEXT_DIST_DIR: ".next-e2e", BACKUP_DIR: path.join(os.tmpdir(), "projectos-e2e-backups"), AUTO_BACKUP: "off" },
     reuseExistingServer: false,
     timeout: 120_000,
   },

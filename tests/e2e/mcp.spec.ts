@@ -34,6 +34,9 @@ test("MCP: un agente gestiona issues y la UI lo refleja; permisos respetados", a
   expect((await fetch(`${baseURL}/api/mcp`, { method: "POST" })).status).toBe(403);
 
   const agent = await connect(baseURL!, write);
+  // the working agreement arrives with the connection, for both scopes
+  expect(agent.getInstructions()).toContain("next_work");
+  expect(agent.getInstructions()).toContain("log_progress");
   const names = (await agent.listTools()).tools.map((t) => t.name);
   expect(names).toContain("create_issue");
   expect(names.some((n) => /delete|remove/.test(n))).toBe(false);

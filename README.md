@@ -14,6 +14,10 @@ pnpm dev            # http://localhost:3000   (desarrollo)
 pnpm build && pnpm start
 ```
 
+**Uso diario**: `pnpm build` y déjalo corriendo con systemd (`scripts/projectos.service`, instrucciones dentro: unidad de
+usuario, reinicio automático, arranque con la sesión). Solo un proceso puede usar `./data/pg` a la vez: para el servidor de
+desarrollo antes de arrancar el de producción. Para conectar agentes, ver [`docs/agents.md`](docs/agents.md).
+
 Sin configuración, los datos viven en `./data/pg` (PostgreSQL embebido con PGlite). Cierra y reabre la app: todo persiste.
 
 ## Docker Compose (PostgreSQL)
@@ -35,6 +39,7 @@ login** (uso personal/local). Si la expones, ponla detrás de un proxy con auten
 | `DATABASE_URL` | _(vacío)_ | Si se define, usa PostgreSQL; si no, PGlite en disco |
 | `PGLITE_DIR` | `./data/pg` | Directorio de datos de PGlite |
 | `BACKUP_DIR` | `./data/backups` | Dónde se guardan las copias "en el servidor" |
+| `AUTO_BACKUP` | _(activa)_ | `off` desactiva la copia automática diaria (se guardan las últimas 14 como `auto-*.json`) |
 
 Las migraciones (`drizzle/`) se aplican solas al arrancar.
 

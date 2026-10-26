@@ -15,9 +15,21 @@ export function errorMessage(e: unknown): { message: string; status: number } {
   return { message: "Error interno", status: 500 };
 }
 
+/** Sent to every agent on connect (MCP `instructions`): the working agreement, so each project's CLAUDE.md can stay short. */
+export const MCP_INSTRUCTIONS = `ProjectOS is the project tracker for this work. Issues have keys like FICH-12; names (states, labels, members, properties) are matched case-insensitively.
+
+Workflow:
+1. next_work (optionally with project / assignee) tells you what to do next. Read the issue with get_issue before touching it (description, relations, comments, children).
+2. When you start: set_state to the started state (see get_project for state names) and, if you are a registered member, update_issue with assignee set to your name (list_members / create_member).
+3. While working: log_progress for notable steps, attaching evidence (commit SHA, PR URL, file path, test output) instead of claims. Use add_comment for questions or decisions.
+4. When it is truly done and verified: complete_issue with the evidence. If you are blocked, say so with add_comment and add_relation (the blocker 'blocks' this issue), do not mark it done.
+5. Found extra work? create_issue (with parent for sub-tasks) instead of widening the current one.
+
+Rules: never invent issue keys, states or property values: read them first (get_project, list_properties, list_members). Docs pages (get_page / update_page / append_to_page): read before you write; update_page needs the expectedUpdatedAt you read, append_to_page never overwrites. There are no delete tools by design: archive_issue / archive_page are reversible. Your writes are recorded in the activity log as your token's name.`;
+
 /** Builds a per-request MCP server exposing only the tools this token's scope allows. */
 export function buildMcpServer(ctx: AuthContext) {
-  const server = new McpServer({ name: "projectos", version: "0.1.0" });
+  const server = new McpServer({ name: "projectos", version: "0.1.0" }, { instructions: MCP_INSTRUCTIONS });
   for (const t of TOOLS) {
     if (t.scope === "write" && ctx.scope !== "write") continue;
     server.registerTool(
