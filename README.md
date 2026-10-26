@@ -64,6 +64,11 @@ MCP ejecutó `next_work` → `set_state` → `log_progress` (con evidencia de co
 comprobó por REST que el issue quedó En progreso con comentario y enlace, y que la página enlaza al otro issue, todo con
 actor `agent:<token>`.
 
+**Ajustes del proyecto** (`/<PROY>/settings`): nombre, color y descripción (Markdown), y los estados del flujo: crear,
+renombrar, recolorear, reordenar, cambiar el estado por defecto y borrar. Un proyecto siempre conserva un estado «completed»
+y uno por defecto; borrar un estado obliga a elegir a cuál se mueven sus issues. Es solo para humanos (los agentes no tienen
+herramientas de gestión de estados) y los agentes siguen usando `set_state` con los nombres que existan.
+
 **Seguridad**: no existe ninguna herramienta de borrado (borrar y restaurar son acciones humanas). Archivar es reversible.
 Cada cambio queda en el historial con el actor `agent:<nombre del token>`, y `update_issue` conserva los valores anteriores
 (p. ej. la descripción previa) en la actividad.

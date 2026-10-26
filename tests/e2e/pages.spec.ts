@@ -51,7 +51,10 @@ test("docs: páginas Markdown con enlaces bidireccionales, historial y búsqueda
   await page.reload();
   const history = page.getByRole("region", { name: "Historial" });
   await expect(history.getByRole("button", { name: "Restaurar" })).toHaveCount(2);
+  // restoring reloads the document; wait for it so later keystrokes do not land on the page being replaced
+  const reloaded = page.waitForEvent("load");
   await history.getByRole("button", { name: "Restaurar" }).first().click();
+  await reloaded;
   await expect(page.getByTestId("page-preview")).toContainText("Depende de");
 
   // palette finds the page

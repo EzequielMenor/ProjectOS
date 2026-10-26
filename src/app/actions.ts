@@ -8,7 +8,8 @@ import { addComment, addRelation, createIssue, issueKey, moveIssue, removeRelati
 import { ensureLabel } from "@/server/services/labels";
 import { createPage, restorePageVersion, searchPages, setPageArchived, updatePage } from "@/server/services/pages";
 import { createView, deleteView } from "@/server/services/views";
-import { createProject, listProjects } from "@/server/services/projects";
+import { createProject, listProjects, updateProject } from "@/server/services/projects";
+import { createState, deleteState, moveState, setDefaultState, updateState } from "@/server/services/states";
 import { createToken, revokeToken } from "@/server/services/tokens";
 import { assignIssue, createCycle, createMilestone, createModule } from "@/server/services/planning";
 
@@ -174,4 +175,38 @@ export async function searchAction(query: string): Promise<{ issues: SearchHit[]
     })),
     pages: pages.map((p) => ({ id: p.id, title: p.title, identifier: ident.get(p.projectId) ?? "" })).filter((p) => p.identifier),
   };
+}
+
+export async function updateProjectAction(id: string, patch: unknown) {
+  return run(async () => {
+    await updateProject(id, patch);
+  });
+}
+
+export async function createStateAction(input: unknown) {
+  return run(async () => {
+    await createState(input);
+  });
+}
+
+export async function updateStateAction(id: string, patch: unknown) {
+  return run(async () => {
+    await updateState(id, patch);
+  });
+}
+
+export async function moveStateAction(id: string, direction: "up" | "down") {
+  return run(async () => {
+    await moveState(id, direction);
+  });
+}
+
+export async function setDefaultStateAction(id: string) {
+  return run(async () => {
+    await setDefaultState(id);
+  });
+}
+
+export async function deleteStateAction(id: string, input: unknown) {
+  return run(async () => deleteState(id, input as { moveIssuesTo: string }));
 }
