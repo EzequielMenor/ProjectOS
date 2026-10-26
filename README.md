@@ -64,7 +64,7 @@ La misma lista está disponible por REST: `GET /api/v1/tools` (catálogo con JSO
 ## Copias de seguridad y restauración
 
 - **UI**: `/settings/backup` — descargar, guardar en el servidor, y restaurar (primero *Simular*, luego confirmar escribiendo `RESTAURAR`).
-- **CLI** (con PGlite, para la app antes de usarlo: un solo proceso puede abrir el directorio de datos):
+- **CLI** (con PGlite hay que parar la app antes: un solo proceso puede abrir el directorio de datos):
 
   ```bash
   pnpm backup                              # escribe data/backups/backup-<fecha>.json
@@ -79,7 +79,14 @@ se conservan al restaurar. Con PostgreSQL también puedes usar `pg_dump`.
 
 ## Migración desde Plane / Linear
 
-Pendiente de documentar cuando esté implementada (ver `docs/migration.md`).
+Plane está implementado (solo lectura sobre Plane; con simulación, validación y copia previa). Linear está pendiente.
+Detalle y límites en [`docs/migration.md`](docs/migration.md).
+
+```bash
+export PLANE_API_KEY=...        # Plane → Perfil → Tokens de acceso personal
+pnpm projectos import plane --workspace=<slug> --only=FICH,AIES --expect=FICH:31,AIES:38 --dry-run
+pnpm projectos import plane --workspace=<slug> --only=FICH,AIES --expect=FICH:31,AIES:38
+```
 
 ## Desarrollo
 
