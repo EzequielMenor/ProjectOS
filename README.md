@@ -75,6 +75,11 @@ cookie del navegador y el servidor lo aplica en el primer pintado; `Restablecer`
 **Móvil**: por debajo de 768 px la barra lateral pasa a una barra superior con botón de menú (cajón con la misma navegación,
 tamaño de interfaz incluido) y botón de búsqueda; las vistas y la ficha se ajustan al ancho sin desplazamiento horizontal.
 
+**Accesibilidad y estados**: las pantallas de listado muestran un esqueleto mientras cargan; un error de render enseña «Algo ha fallado»
+con «Reintentar» (sin perder la barra lateral) y un proyecto, issue o página inexistente devuelve un 404 real. Los tests
+(`tests/e2e/a11y.spec.ts`) pasan axe-core (WCAG 2.1 A/AA) en tema claro y oscuro sobre todas las pantallas, la paleta y los
+desplegables, y comprueban el enlace «Saltar al contenido» y el anillo de foco con teclado.
+
 **Ajustes del proyecto** (`/<PROY>/settings`): nombre, color y descripción (Markdown), y los estados del flujo: crear,
 renombrar, recolorear, reordenar, cambiar el estado por defecto y borrar. Un proyecto siempre conserva un estado «completed»
 y uno por defecto; borrar un estado obliga a elegir a cuál se mueven sus issues. Es solo para humanos (los agentes no tienen

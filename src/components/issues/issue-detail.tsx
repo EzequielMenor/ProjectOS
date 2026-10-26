@@ -220,7 +220,7 @@ export function IssueDetail({
             onChange={(e) => setTitle(e.target.value.replace(/\n/g, " "))}
             onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             onBlur={() => title.trim() && title !== issue.title && save({ title: title.trim() })}
-            className="field-sizing-content w-full resize-none bg-transparent text-xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground"
+            className="field-sizing-content w-full resize-none bg-transparent text-xl font-semibold tracking-tight outline-none rounded-md focus-visible:ring-2 focus-visible:ring-ring/60 placeholder:text-muted-foreground"
           />
           <DescriptionField value={description} saved={issue.description} onChange={setDescription} onSave={() => save({ description })} />
           {issue.links.length ? (
@@ -261,7 +261,7 @@ export function IssueDetail({
               onChange={(e) => setSubtask(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addSubtask()}
               placeholder="Añadir subtarea (Enter)…"
-              className="h-8 w-full rounded-md bg-transparent px-1.5 text-sm outline-none placeholder:text-muted-foreground focus-visible:bg-accent"
+              className="h-8 w-full rounded-md bg-transparent px-1.5 text-sm outline-none placeholder:text-muted-foreground focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60"
             />
           </section>
           <section className="mt-8" aria-label="Relaciones">
@@ -483,7 +483,7 @@ export function IssueDetail({
                 aria-label="Fecha límite"
                 defaultValue={issue.dueDate ?? ""}
                 onChange={(e) => save({ dueDate: e.target.value || null })}
-                className="ml-auto h-6 rounded bg-transparent text-right text-sm outline-none focus-visible:bg-accent"
+                className="ml-auto h-6 rounded bg-transparent text-right text-sm outline-none focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60"
               />
             </label>
             <label className="flex items-center gap-1.5 px-1.5 py-1">
@@ -498,7 +498,7 @@ export function IssueDetail({
                   const v = e.target.value === "" ? null : Number(e.target.value);
                   if (v !== issue.estimate) save({ estimate: v });
                 }}
-                className="ml-auto h-6 w-16 rounded bg-transparent text-right text-sm outline-none focus-visible:bg-accent"
+                className="ml-auto h-6 w-16 rounded bg-transparent text-right text-sm outline-none focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60"
               />
             </label>
           </div>

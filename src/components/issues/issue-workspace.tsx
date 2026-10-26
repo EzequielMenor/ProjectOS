@@ -623,6 +623,8 @@ function SortableCard({ issue, project, selected, onHover }: { issue: IssueDTO; 
       onMouseEnter={onHover}
       className={cn(isDragging && "opacity-30")}
       {...attributes}
+      // dnd-kit says role="button", but the card holds a link: a button cannot contain interactive children
+      role="group"
       {...listeners}
     >
       <Card issue={issue} href={issue.pending ? undefined : `/${project.identifier}/issues/${issue.seq}`} selected={selected} />

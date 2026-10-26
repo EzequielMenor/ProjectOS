@@ -110,7 +110,7 @@ export function PageEditor({ identifier, projectName, page, resolved, links, ver
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => void save()}
-            className="w-full bg-transparent text-2xl font-semibold tracking-tight outline-none"
+            className="w-full bg-transparent text-2xl font-semibold tracking-tight outline-none rounded-md focus-visible:ring-2 focus-visible:ring-ring/60"
           />
           {mode === "edit" ? (
             <Textarea

@@ -32,7 +32,7 @@ export function LabelPicker({
       <PopoverTrigger
         aria-label="Etiquetas"
         title="Etiquetas"
-        className={cn("inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left outline-none transition-colors hover:bg-accent focus-visible:bg-accent", className)}
+        className={cn("inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left outline-none transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60", className)}
       >
         {children}
       </PopoverTrigger>

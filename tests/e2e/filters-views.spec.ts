@@ -15,6 +15,8 @@ test("filtros, vista de tabla y vistas guardadas", async ({ page }) => {
   const prio = async (title: string, label: string) => {
     await page.getByTestId("issue-row").filter({ hasText: title }).getByRole("button", { name: "Prioridad" }).click();
     await page.getByRole("option", { name: label }).click();
+    // the picker animates out: wait until it is gone, or the next popover briefly shows duplicate options
+    await expect(page.getByRole("option")).toHaveCount(0);
   };
   await prio("Beta", "Urgente");
   await prio("Gamma", "Alta");
