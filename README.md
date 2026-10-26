@@ -45,7 +45,7 @@ Las migraciones (`drizzle/`) se aplican solas al arrancar.
 
 ## Uso con agentes (API y MCP)
 
-1. Abre **Tokens de API** (`/settings/tokens`), crea un token `write` (o `read`) y cópialo: solo se muestra una vez.
+1. Abre **Tokens de API** (`/settings/tokens`), crea un token `write` (o `read`) y cópialo: solo se muestra una vez. Debajo, «Configurar en el agente» ofrece el comando de Claude Code, el JSON para otros clientes y un prompt para que el propio agente se configure, ya con el token puesto.
 2. Registra el MCP en Claude Code:
 
    ```bash

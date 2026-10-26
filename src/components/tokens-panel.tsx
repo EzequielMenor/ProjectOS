@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createTokenAction, revokeTokenAction } from "@/app/actions";
+import { AgentSetup } from "@/components/agent-setup";
 import { Input } from "@/components/ui/input";
 
 type Tok = { id: string; name: string; scope: "read" | "write"; createdAt: string; lastUsedAt: string | null; revoked: boolean };
@@ -12,10 +13,9 @@ export function TokensPanel({ tokens }: { tokens: Tok[] }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [scope, setScope] = useState<"read" | "write">("write");
-  const [fresh, setFresh] = useState<string | null>(null);
+  const [fresh, setFresh] = useState<{ token: string; scope: "read" | "write" } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
 
   return (
     <div className="mt-6 flex flex-col gap-6">
@@ -27,7 +27,7 @@ export function TokensPanel({ tokens }: { tokens: Tok[] }) {
           start(async () => {
             const res = await createTokenAction({ name, scope });
             if (res.ok) {
-              setFresh(res.data.token);
+              setFresh({ token: res.data.token, scope });
               setName("");
               router.refresh();
             } else setError(res.error);
@@ -59,13 +59,11 @@ export function TokensPanel({ tokens }: { tokens: Tok[] }) {
       {fresh ? (
         <div role="status" className="rounded-lg border bg-card p-4 text-sm">
           <p className="font-medium">Copia el token ahora: no se volverá a mostrar.</p>
-          <code data-testid="new-token" className="mt-2 block break-all rounded bg-muted p-2 font-mono text-xs">{fresh}</code>
-          <p className="mt-3 text-xs text-muted-foreground">Claude Code:</p>
-          <code className="mt-1 block break-all rounded bg-muted p-2 font-mono text-xs">
-            claude mcp add --transport http projectos {origin}/api/mcp --header &quot;Authorization: Bearer {fresh}&quot;
-          </code>
+          <code data-testid="new-token" className="mt-2 block break-all rounded bg-muted p-2 font-mono text-xs">{fresh.token}</code>
         </div>
       ) : null}
+
+      <AgentSetup token={fresh?.token ?? null} scope={fresh?.scope ?? scope} />
 
       <table className="w-full text-sm">
         <thead className="text-left text-xs text-muted-foreground">
