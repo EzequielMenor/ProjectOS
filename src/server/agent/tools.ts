@@ -9,6 +9,7 @@ import {
   getIssueByKey,
   issueKey,
   listActivity,
+  searchIssues,
   listIssues,
   setIssueArchived,
   updateIssue,
@@ -183,11 +184,8 @@ export const TOOLS: ToolDef[] = [
     scope: "read",
     shape: { query: z.string().min(1), limit: z.number().int().min(1).max(50).default(20) },
     run: async ({ query, limit }) => {
-      const exact = await getIssueByKey(query).then((i) => [summary(i, i.project.identifier)]).catch(() => []);
-      const rows = await listIssues({ query, limit });
-      const found = rows.map((r) => summary(r, r.project.identifier));
-      const seen = new Set(exact.map((e) => e.key));
-      return [...exact, ...found.filter((f) => !seen.has(f.key))];
+      const rows = await searchIssues(query, limit);
+      return rows.map((r) => summary(r, r.project.identifier));
     },
   }),
   tool({

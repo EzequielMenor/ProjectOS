@@ -108,6 +108,22 @@ export async function getIssueByKey(key: string) {
   return getIssue(found.id);
 }
 
+/** `%` and `_` in user input must match literally, not act as LIKE wildcards. */
+const escapeLike = (q: string) => q.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+/** Exact key (FICH-12) first, then title matches, then description-only matches. */
+export async function searchIssues(query: string, limit = 20) {
+  const q = query.trim();
+  if (!q) return [];
+  const exact = await getIssueByKey(q).catch(() => null);
+  const rows = await listIssues({ query: q, limit: Math.min(limit * 3, 200) });
+  const needle = q.toLowerCase();
+  const ranked = rows
+    .filter((r) => r.id !== exact?.id)
+    .sort((a, b) => Number(b.title.toLowerCase().includes(needle)) - Number(a.title.toLowerCase().includes(needle)));
+  return [...(exact ? [exact] : []), ...ranked].slice(0, limit);
+}
+
 export async function listIssues(raw: unknown = {}) {
   const f = listIssuesInput.parse(raw);
   const db = await getDb();
@@ -133,7 +149,7 @@ export async function listIssues(raw: unknown = {}) {
         )
       : undefined,
     f.query
-      ? or(ilike(issue.title, `%${f.query}%`), ilike(issue.description, `%${f.query}%`))
+      ? or(ilike(issue.title, `%${escapeLike(f.query)}%`), ilike(issue.description, `%${escapeLike(f.query)}%`))
       : undefined,
   ];
   return db.query.issue.findMany({

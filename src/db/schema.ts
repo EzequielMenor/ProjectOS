@@ -114,6 +114,8 @@ export const cycle = pgTable(
 );
 
 /** A thematic group of work (a feature or phase). An issue can be in several modules. */
+// A table named `module` is the clearest domain name; the lint rule targets assigning to Node's `module`.
+// eslint-disable-next-line @next/next/no-assign-module-variable
 export const module = pgTable(
   "module",
   {

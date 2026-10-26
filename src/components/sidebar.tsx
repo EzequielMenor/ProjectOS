@@ -5,6 +5,7 @@ import { useParams, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Boxes, CalendarRange, Columns3, DatabaseBackup, Flag, GanttChart, KeyRound, LayoutList, Moon, Plus, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PaletteButton } from "@/components/command-palette";
 
 type P = { id: string; identifier: string; name: string; color: string };
 
@@ -28,6 +29,7 @@ export function Sidebar({ projects }: { projects: P[] }) {
           <Moon className="size-4 dark:hidden" />
         </button>
       </div>
+      <PaletteButton />
       <nav className="flex-1 overflow-y-auto px-2 py-2">
         <div className="mb-1 flex items-center px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           Proyectos

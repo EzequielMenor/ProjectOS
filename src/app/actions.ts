@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { ServiceError } from "@/server/errors";
-import { addComment, createIssue, moveIssue, setIssueArchived, updateIssue } from "@/server/services/issues";
+import type { Priority, StateGroup } from "@/db/schema";
+import { addComment, createIssue, issueKey, moveIssue, searchIssues, setIssueArchived, updateIssue } from "@/server/services/issues";
 import { createProject } from "@/server/services/projects";
 import { createToken, revokeToken } from "@/server/services/tokens";
 import { assignIssue, createCycle, createMilestone, createModule } from "@/server/services/planning";
@@ -86,4 +87,24 @@ export async function assignIssueAction(issueId: string, input: unknown) {
   return run(async () => {
     await assignIssue(issueId, input);
   });
+}
+
+export type SearchHit = {
+  key: string;
+  title: string;
+  state: { name: string; group: StateGroup; color: string };
+  priority: Priority;
+};
+
+/** Read-only: no revalidation, bounded results. Backs the Ctrl+K palette. */
+export async function searchAction(query: string): Promise<SearchHit[]> {
+  const q = String(query ?? "").slice(0, 200);
+  if (q.trim().length < 1) return [];
+  const rows = await searchIssues(q, 12);
+  return rows.map((r) => ({
+    key: issueKey(r.project.identifier, r.seq),
+    title: r.title,
+    state: { name: r.state.name, group: r.state.group, color: r.state.color },
+    priority: r.priority,
+  }));
 }
