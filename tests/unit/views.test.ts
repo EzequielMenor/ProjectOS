@@ -3,7 +3,7 @@ import { applyFilters, parseFilters, serializeFilters } from "@/lib/issue-filter
 import type { IssueDTO } from "@/server/dto";
 import { createBackup, restoreBackup } from "@/server/services/backup";
 import { createProject } from "@/server/services/projects";
-import { createView, deleteView, listViews } from "@/server/services/views";
+import { createView, deleteView, listAllViews, listViews } from "@/server/services/views";
 
 const issue = (o: Partial<IssueDTO>): IssueDTO => ({
   id: "i", key: "X-1", seq: 1, title: "t", type: "issue", stateId: "s1", priority: "none", parentId: null, assigneeId: null,
@@ -40,6 +40,20 @@ describe("issue filters", () => {
 });
 
 describe("saved views", () => {
+  it("keeps assignee and custom-property filters (and nothing else unknown)", async () => {
+    const pid = (await createProject({ identifier: "VWK", name: "Claves" })).id;
+    const prop = "0b9d6c52-3c38-4a63-9d0b-6a1f0c9a7e11";
+    const v = await createView({
+      projectId: pid,
+      name: "Mías",
+      query: `assignee=a1,none&p.${prop}=Alta&p.not-an-id=x&p.${prop.slice(0, 8)}=y&priority=high&junk=1`,
+    });
+    const kept = new URLSearchParams(v.query);
+    expect(Object.fromEntries(kept)).toEqual({ assignee: "a1,none", [`p.${prop}`]: "Alta", priority: "high" });
+    expect((await listAllViews()).some((x) => x.id === v.id)).toBe(true);
+    await deleteView(v.id, pid); // the next test counts the views in the backup
+  });
+
   let projectId: string;
   beforeAll(async () => {
     projectId = (await createProject({ identifier: "VWS", name: "Views" })).id;

@@ -44,6 +44,32 @@ test("paleta Ctrl+K: buscar por clave y por texto, navegar y atajos g", async ({
   await page.keyboard.press("c");
   await page.waitForURL(/\/BUSC\/cycles/);
 
+  // more chords: g e → epics, g s → settings
+  await page.locator("body").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press("g");
+  await page.keyboard.press("e");
+  await page.waitForURL(/\/BUSC\/epics/);
+  await page.keyboard.press("g");
+  await page.keyboard.press("s");
+  await page.waitForURL(/\/BUSC\/settings/);
+
+  // interface size from the palette; the sidebar control follows and the cookie is kept
+  const rootSize = () => page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+  const group = page.getByRole("group", { name: "Tamaño de la interfaz" });
+  await page.keyboard.press("Control+k");
+  await palette.getByRole("combobox").fill("aumentar tamaño");
+  await palette.getByRole("option", { name: "Aumentar tamaño de la interfaz" }).click();
+  await expect(palette).toBeHidden();
+  expect(await rootSize()).toBe("20px");
+  await expect(group).toContainText("125%");
+  await page.reload();
+  expect(await rootSize()).toBe("20px");
+  await page.keyboard.press("Control+k");
+  await palette.getByRole("combobox").fill("restablecer tamaño");
+  await palette.getByRole("option", { name: "Restablecer tamaño de la interfaz" }).click();
+  expect(await rootSize()).toBe("18px");
+  await expect(group).toContainText("113%");
+
   // "/" opens it too; no results is explained
   await page.keyboard.press("/");
   await palette.getByRole("combobox").fill("zzzz-nada");

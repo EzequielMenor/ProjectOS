@@ -3,28 +3,32 @@
 import { useRouter, useParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
-import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, FolderPlus, GanttChart, KeyRound, LayoutList, Moon, Search, Table2 } from "lucide-react";
+import { Bookmark, Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, FolderPlus, GanttChart, KeyRound, Layers, LayoutList, Moon, Search, Settings, Table2, Users, ZoomIn, ZoomOut } from "lucide-react";
 import { searchAction, type PageHit, type SearchHit } from "@/app/actions";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command";
 import { PriorityIcon, StateIcon } from "@/lib/issue-meta";
+import { DEFAULT_UI_SIZE, currentUiSize, setUiSize, stepUiSize } from "@/lib/ui-scale";
 
-type P = { identifier: string; name: string; color: string };
+type P = { id: string; identifier: string; name: string; color: string };
+type SavedView = { id: string; projectId: string; name: string; layout: "list" | "board" | "table"; query: string };
 export const OPEN_PALETTE = "projectos:palette";
 
 const VIEWS = [
   { slug: "list", label: "Lista", key: "l", icon: LayoutList },
   { slug: "board", label: "Kanban", key: "b", icon: Columns3 },
   { slug: "table", label: "Tabla", key: "t", icon: Table2 },
+  { slug: "epics", label: "Épicas", key: "e", icon: Layers },
   { slug: "cycles", label: "Ciclos", key: "c", icon: CalendarRange },
   { slug: "modules", label: "Módulos", key: "m", icon: Boxes },
   { slug: "milestones", label: "Hitos", key: "h", icon: Flag },
   { slug: "roadmap", label: "Roadmap", key: "r", icon: GanttChart },
   { slug: "pages", label: "Docs", key: "d", icon: FileText },
+  { slug: "settings", label: "Ajustes", key: "s", icon: Settings },
 ] as const;
 
 const inField = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable=true]");
 
-export function CommandPalette({ projects }: { projects: P[] }) {
+export function CommandPalette({ projects, views: savedViews }: { projects: P[]; views: SavedView[] }) {
   const router = useRouter();
   const params = useParams<{ project?: string }>();
   const { resolvedTheme, setTheme } = useTheme();
@@ -40,7 +44,7 @@ export function CommandPalette({ projects }: { projects: P[] }) {
     router.push(href);
   };
 
-  // Global shortcuts: Ctrl/Cmd+K or "/" open; "g" then a letter jumps between project views.
+  // Global shortcuts: Ctrl/Cmd+K or "/" open; "g" then a letter jumps between project views (shown next to each in the palette).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -88,11 +92,19 @@ export function CommandPalette({ projects }: { projects: P[] }) {
   const q = query.trim().toLowerCase();
   const match = (label: string) => !q || label.toLowerCase().includes(q);
   const views = current ? VIEWS.filter((v) => match(v.label)) : [];
+  const currentId = projects.find((p) => p.identifier === current)?.id;
+  const saved = savedViews.filter((v) => v.projectId === currentId && match(v.name));
   const projs = projects.filter((p) => match(p.name) || match(p.identifier));
   const settings = [
+    { href: "/settings/members", label: "Miembros", icon: Users },
     { href: "/settings/tokens", label: "Tokens de API", icon: KeyRound },
     { href: "/settings/backup", label: "Copias de seguridad", icon: DatabaseBackup },
   ].filter((s) => match(s.label));
+  const sizeActions = [
+    { id: "bigger", label: "Aumentar tamaño de la interfaz", icon: ZoomIn, apply: () => setUiSize(stepUiSize(currentUiSize(), 1)) },
+    { id: "smaller", label: "Reducir tamaño de la interfaz", icon: ZoomOut, apply: () => setUiSize(stepUiSize(currentUiSize(), -1)) },
+    { id: "reset", label: "Restablecer tamaño de la interfaz", icon: ZoomIn, apply: () => setUiSize(DEFAULT_UI_SIZE) },
+  ].filter((a) => match(a.label));
   const themeLabel = resolvedTheme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
 
   return (
@@ -144,6 +156,16 @@ export function CommandPalette({ projects }: { projects: P[] }) {
               ))}
             </CommandGroup>
           ) : null}
+          {saved.length ? (
+            <CommandGroup heading={`Vistas guardadas de ${current}`}>
+              {saved.map((v) => (
+                <CommandItem key={v.id} value={`saved ${v.id}`} onSelect={() => go(`/${current}/${v.layout}${v.query ? `?${v.query}` : ""}`)}>
+                  <Bookmark className="size-4" />
+                  <span className="truncate">{v.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
           {projs.length ? (
             <CommandGroup heading="Proyectos">
               {projs.map((p) => (
@@ -174,6 +196,19 @@ export function CommandPalette({ projects }: { projects: P[] }) {
                 {themeLabel}
               </CommandItem>
             ) : null}
+            {sizeActions.map((a) => (
+              <CommandItem
+                key={a.id}
+                value={`action size-${a.id}`}
+                onSelect={() => {
+                  a.apply();
+                  setOpen(false);
+                }}
+              >
+                <a.icon className="size-4" />
+                {a.label}
+              </CommandItem>
+            ))}
             {settings.map((s) => (
               <CommandItem key={s.href} value={`setting ${s.href}`} onSelect={() => go(s.href)}>
                 <s.icon className="size-4" />

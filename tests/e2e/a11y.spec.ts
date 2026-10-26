@@ -62,6 +62,15 @@ for (const theme of ["light", "dark"] as const) {
       await expect(page.getByRole("complementary", { name: "Propiedades" }).getByRole("button", { name: "Asignado" })).toContainText(name);
     }
 
+    // a saved view, so the sidebar entry is audited too
+    await page.goto(`/${key}/list`);
+    await page.getByRole("button", { name: "Vistas guardadas" }).click();
+    await page.getByLabel("Nombre de la vista").fill("Todo el proyecto");
+    await page.getByRole("button", { name: "Guardar", exact: true }).click();
+    await expect(page.getByRole("group", { name: "Vistas guardadas" }).getByRole("link", { name: "Todo el proyecto" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator("[data-slot=popover-content]")).toHaveCount(0);
+
     for (const path of ["list", "board", "table", "epics", "cycles", "modules", "milestones", "roadmap", "pages", "settings", "issues/1", "issues/2"]) {
       await page.goto(`/${key}/${path}`);
       await page.waitForLoadState("networkidle");

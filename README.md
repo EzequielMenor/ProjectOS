@@ -69,6 +69,12 @@ canceladas y archivadas no cuentan). Se crean desde la página, o se convierte c
 Para agentes: `create_issue` con `type: "epic"`, `parent` para añadir trabajo, `list_epics` para ver el progreso y
 `get_issue` devuelve `childProgress`. `next_work` nunca propone épicas, solo el trabajo concreto.
 
+**Vistas guardadas y atajos**: «Vistas» en la barra de filtros guarda los filtros actuales (estado, asignado, prioridad,
+etiqueta, ciclo, módulo, propiedades de selección y texto) con su layout; cada vista aparece bajo el proyecto en la barra
+lateral y en la paleta (se marca como actual solo mientras sus filtros están aplicados). Paleta: `Ctrl K` o `/`. Saltos con
+`g` y una letra: `l` Lista, `b` Kanban, `t` Tabla, `e` Épicas, `c` Ciclos, `m` Módulos, `h` Hitos, `r` Roadmap, `d` Docs,
+`s` Ajustes. En la paleta también hay Aumentar/Reducir/Restablecer tamaño de la interfaz, tema, miembros y tokens.
+
 **Miembros y asignados** (`/settings/members`, enlace «Miembros» en la barra lateral): personas y agentes del workspace
 (existe uno inicial, «Yo»). Se asigna desde la ficha, la tabla (editable en la celda) y se ve como avatar en lista y
 Kanban; el filtro «Asignado» admite «Sin asignar» y varios miembros a la vez (`assignee=<id>,none` en la URL). Los

@@ -1,11 +1,13 @@
 import { cookies } from "next/headers";
 import { UI_SIZE_COOKIE, parseUiSize } from "@/lib/ui-scale";
 import { listProjects } from "@/server/services/projects";
+import { listAllViews } from "@/server/services/views";
 import { Sidebar } from "@/components/sidebar";
 import { CommandPalette } from "@/components/command-palette";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const projects = await listProjects();
+  const [projects, views] = await Promise.all([listProjects(), listAllViews()]);
+  const savedViews = views.map((v) => ({ id: v.id, projectId: v.projectId, name: v.name, layout: v.layout, query: v.query }));
   const uiSize = parseUiSize((await cookies()).get(UI_SIZE_COOKIE)?.value);
   return (
     <div className="flex h-full flex-col md:flex-row">
@@ -15,8 +17,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         Saltar al contenido
       </a>
-      <Sidebar uiSize={uiSize} projects={projects.map((p) => ({ id: p.id, identifier: p.identifier, name: p.name, color: p.color }))} />
-      <CommandPalette projects={projects.map((p) => ({ identifier: p.identifier, name: p.name, color: p.color }))} />
+      <Sidebar uiSize={uiSize} views={savedViews} projects={projects.map((p) => ({ id: p.id, identifier: p.identifier, name: p.name, color: p.color }))} />
+      <CommandPalette
+        views={savedViews.map((v) => ({ id: v.id, name: v.name, layout: v.layout, query: v.query, projectId: v.projectId }))}
+        projects={projects.map((p) => ({ id: p.id, identifier: p.identifier, name: p.name, color: p.color }))}
+      />
       <main id="main" tabIndex={-1} className="min-h-0 min-w-0 flex-1 outline-none bg-background">{children}</main>
     </div>
   );

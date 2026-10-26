@@ -10,7 +10,7 @@ Criterio: primero lo que impide usar la app cada día, después lo que la proteg
 | 3 | **Contraseña opcional (`APP_PASSWORD`)** para la interfaz y la API del navegador | Solo hace falta si se expone fuera de la máquina; Docker publica en `127.0.0.1` | **descartado por ahora** (uso personal; decisión del usuario) |
 | 4 | **Propiedades personalizadas** por proyecto (texto, número, fecha, selección) en la ficha, en filtros y vía MCP | Requisito del encargo; Plane las tiene | **hecho** |
 | 5 | **Miembros y asignados** (personas y agentes), filtro «asignado a» | Los asignados de Plane se descartaron al importar; útil para repartir trabajo con agentes | **hecho** |
-| 6 | **Vistas guardadas en la barra lateral** y atajos (tamaño de interfaz, ir a Épicas…) | Pulido; mejora la velocidad estilo Linear | pendiente |
+| 6 | **Vistas guardadas en la barra lateral** y atajos (tamaño de interfaz, ir a Épicas…) | Pulido; mejora la velocidad estilo Linear | **hecho** |
 | 7 | **Importador de Linear** (solo lectura, simulación, validación, copia previa) | Necesita una API key o un export de Linear | bloqueado: credenciales |
 | 8 | **Verificar Docker Compose** | El daemon no es accesible con este usuario (`sudo usermod -aG docker $USER`) | bloqueado: permisos |
 

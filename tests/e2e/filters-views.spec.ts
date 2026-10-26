@@ -47,7 +47,25 @@ test("filtros, vista de tabla y vistas guardadas", async ({ page }) => {
   await page.getByRole("button", { name: "Limpiar" }).click();
   await expect(page.getByTestId("issue-row")).toHaveCount(3);
   await page.getByRole("button", { name: "Vistas guardadas" }).click();
-  await page.getByRole("link", { name: /Urgentes/ }).click();
+  await page.locator("[data-slot=popover-content]").getByRole("link", { name: /Urgentes/ }).click();
+  await page.waitForURL(/\/FILT\/table\?priority=urgent/);
+  await expect(page.getByTestId("issue-row")).toHaveCount(1);
+
+  // the same view lives in the sidebar, marks itself current only while its filters are applied, and opens from the palette
+  const side = page.getByRole("group", { name: "Vistas guardadas" });
+  await expect(side.getByRole("link", { name: "Urgentes" })).toHaveAttribute("aria-current", "page");
+  await page.getByRole("button", { name: "Limpiar" }).click();
+  await expect(page.getByTestId("issue-row")).toHaveCount(3);
+  await expect(side.getByRole("link", { name: "Urgentes" })).not.toHaveAttribute("aria-current", "page");
+  await side.getByRole("link", { name: "Urgentes" }).click();
+  await page.waitForURL(/\/FILT\/table\?priority=urgent/);
+  await expect(page.getByTestId("issue-row")).toHaveCount(1);
+  await page.getByRole("button", { name: "Limpiar" }).click();
+  await expect(page.getByTestId("issue-row")).toHaveCount(3);
+  await page.keyboard.press("Control+k");
+  const palette = page.getByRole("dialog", { name: "Paleta de comandos" });
+  await palette.getByRole("combobox").fill("urgentes");
+  await palette.getByRole("option", { name: "Urgentes" }).click();
   await page.waitForURL(/\/FILT\/table\?priority=urgent/);
   await expect(page.getByTestId("issue-row")).toHaveCount(1);
 
@@ -66,4 +84,5 @@ test("filtros, vista de tabla y vistas guardadas", async ({ page }) => {
   await page.getByRole("button", { name: "Vistas guardadas" }).click();
   await page.getByRole("button", { name: "Eliminar vista Urgentes" }).click();
   await expect(page.getByText("Aún no hay vistas guardadas")).toBeVisible();
+  await expect(side).toHaveCount(0); // and it leaves the sidebar
 });

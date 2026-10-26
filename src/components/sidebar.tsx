@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useTheme } from "next-themes";
 import { useState } from "react";
-import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, Layers, LayoutList, Menu, Moon, Plus, Search, Settings, Sun, Table2, Users, X } from "lucide-react";
+import { Bookmark, Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, Layers, LayoutList, Menu, Moon, Plus, Search, Settings, Sun, Table2, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OPEN_PALETTE, PaletteButton } from "@/components/command-palette";
 import { TextSizeControl } from "@/components/text-size-control";
 
 type P = { id: string; identifier: string; name: string; color: string };
 
-type SidebarProps = { projects: P[]; uiSize: number };
+export type SidebarView = { id: string; projectId: string; name: string; layout: "list" | "board" | "table"; query: string };
+type SidebarProps = { projects: P[]; views: SidebarView[]; uiSize: number };
 
 /** Desktop: fixed sidebar. Narrow screens: a top bar whose menu button opens the same navigation as a drawer. */
 export function Sidebar(props: SidebarProps) {
@@ -63,8 +64,9 @@ function MobileBar(props: SidebarProps) {
   );
 }
 
-function SidebarBody({ projects, uiSize }: SidebarProps) {
+function SidebarBody({ projects, views, uiSize }: SidebarProps) {
   const pathname = usePathname();
+  const search = useSearchParams().toString();
   const params = useParams<{ project?: string }>();
   const { resolvedTheme, setTheme } = useTheme();
   const current = params.project?.toUpperCase();
@@ -94,6 +96,8 @@ function SidebarBody({ projects, uiSize }: SidebarProps) {
         {projects.length === 0 ? <p className="px-2 py-2 text-xs text-muted-foreground">Sin proyectos todavía.</p> : null}
         {projects.map((p) => {
           const active = current === p.identifier;
+          const projectViews = views.filter((v) => v.projectId === p.id);
+          const onSavedView = projectViews.some((v) => pathname.endsWith(`/${v.layout}`) && search === v.query);
           return (
             <div key={p.id} className="mb-0.5">
               <Link
@@ -109,9 +113,9 @@ function SidebarBody({ projects, uiSize }: SidebarProps) {
               </Link>
               {active ? (
                 <div className="ml-4 border-l pl-2">
-                  <SubLink href={`/${p.identifier}/list`} icon={<LayoutList className="size-3.5" />} label="Lista" active={pathname.endsWith("/list")} />
-                  <SubLink href={`/${p.identifier}/board`} icon={<Columns3 className="size-3.5" />} label="Kanban" active={pathname.endsWith("/board")} />
-                  <SubLink href={`/${p.identifier}/table`} icon={<Table2 className="size-3.5" />} label="Tabla" active={pathname.endsWith("/table")} />
+                  <SubLink href={`/${p.identifier}/list`} icon={<LayoutList className="size-3.5" />} label="Lista" active={pathname.endsWith("/list") && !onSavedView} />
+                  <SubLink href={`/${p.identifier}/board`} icon={<Columns3 className="size-3.5" />} label="Kanban" active={pathname.endsWith("/board") && !onSavedView} />
+                  <SubLink href={`/${p.identifier}/table`} icon={<Table2 className="size-3.5" />} label="Tabla" active={pathname.endsWith("/table") && !onSavedView} />
                   <SubLink href={`/${p.identifier}/epics`} icon={<Layers className="size-3.5" />} label="Épicas" active={pathname.endsWith("/epics")} />
                   <SubLink href={`/${p.identifier}/cycles`} icon={<CalendarRange className="size-3.5" />} label="Ciclos" active={pathname.endsWith("/cycles")} />
                   <SubLink href={`/${p.identifier}/modules`} icon={<Boxes className="size-3.5" />} label="Módulos" active={pathname.endsWith("/modules")} />
@@ -119,6 +123,19 @@ function SidebarBody({ projects, uiSize }: SidebarProps) {
                   <SubLink href={`/${p.identifier}/roadmap`} icon={<GanttChart className="size-3.5" />} label="Roadmap" active={pathname.endsWith("/roadmap")} />
                   <SubLink href={`/${p.identifier}/pages`} icon={<FileText className="size-3.5" />} label="Docs" active={pathname.includes("/pages")} />
                   <SubLink href={`/${p.identifier}/settings`} icon={<Settings className="size-3.5" />} label="Ajustes" active={pathname.endsWith("/settings")} />
+                  {projectViews.length ? (
+                    <div role="group" aria-label="Vistas guardadas" className="mt-1 border-t pt-1">
+                      {projectViews.map((v) => (
+                          <SubLink
+                            key={v.id}
+                            href={`/${p.identifier}/${v.layout}${v.query ? `?${v.query}` : ""}`}
+                            icon={<Bookmark className="size-3.5" />}
+                            label={v.name}
+                            active={pathname.endsWith(`/${v.layout}`) && search === v.query}
+                          />
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -146,7 +163,7 @@ function SubLink({ href, icon, label, active }: { href: string; icon: React.Reac
       )}
     >
       {icon}
-      {label}
+      <span className="min-w-0 truncate">{label}</span>
     </Link>
   );
 }

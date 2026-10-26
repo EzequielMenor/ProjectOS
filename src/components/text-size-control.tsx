@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { DEFAULT_UI_SIZE, UI_SIZES, UI_SIZE_COOKIE } from "@/lib/ui-scale";
+import { useEffect, useState } from "react";
+import { DEFAULT_UI_SIZE, UI_SIZES, UI_SIZE_EVENT, setUiSize } from "@/lib/ui-scale";
 
 export function TextSizeControl({ initial }: { initial: number }) {
   const [size, setSize] = useState(initial);
+  // the palette can change the size too
+  useEffect(() => {
+    const onChange = (e: Event) => setSize((e as CustomEvent<number>).detail);
+    window.addEventListener(UI_SIZE_EVENT, onChange);
+    return () => window.removeEventListener(UI_SIZE_EVENT, onChange);
+  }, []);
   const apply = (n: number) => {
-    setSize(n);
-    document.documentElement.style.fontSize = `${n}px`;
-    document.cookie = `${UI_SIZE_COOKIE}=${n}; path=/; max-age=31536000; samesite=lax`;
+    setSize(n); // not only via the event: a click can land before the listener above is attached
+    setUiSize(n);
   };
   const i = UI_SIZES.indexOf(size as (typeof UI_SIZES)[number]);
   const btn = "grid h-7 w-8 place-items-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent";
