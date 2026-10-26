@@ -18,7 +18,7 @@ export function Sidebar({ projects }: { projects: P[] }) {
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex" aria-label="Navegación">
       <div className="flex h-12 items-center gap-2 px-4">
-        <div className="grid size-5 place-items-center rounded-md bg-primary text-[11px] font-bold text-primary-foreground">P</div>
+        <div className="grid size-5 place-items-center rounded-md bg-primary text-[0.8125rem] font-bold text-primary-foreground">P</div>
         <span className="text-sm font-semibold tracking-tight">ProjectOS</span>
         <button
           aria-label="Cambiar tema"
@@ -31,7 +31,7 @@ export function Sidebar({ projects }: { projects: P[] }) {
       </div>
       <PaletteButton />
       <nav className="flex-1 overflow-y-auto px-2 py-2">
-        <div className="mb-1 flex items-center px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="mb-1 flex items-center px-2 text-[0.8125rem] font-medium uppercase tracking-wide text-muted-foreground">
           Proyectos
           <Link href="/projects/new" aria-label="Nuevo proyecto" className="ml-auto rounded p-0.5 hover:bg-sidebar-accent hover:text-foreground">
             <Plus className="size-3.5" />
@@ -45,13 +45,13 @@ export function Sidebar({ projects }: { projects: P[] }) {
               <Link
                 href={`/${p.identifier}/list`}
                 className={cn(
-                  "flex h-7 items-center gap-2 rounded-md px-2 text-[13px] hover:bg-sidebar-accent",
+                  "flex h-7 items-center gap-2 rounded-md px-2 text-[0.875rem] hover:bg-sidebar-accent",
                   active && "font-medium text-sidebar-accent-foreground",
                 )}
               >
                 <span className="size-2.5 rounded-sm" style={{ background: p.color }} aria-hidden />
                 <span className="truncate">{p.name}</span>
-                <span className="ml-auto font-mono text-[10px] text-muted-foreground">{p.identifier}</span>
+                <span className="ml-auto font-mono text-[0.75rem] text-muted-foreground">{p.identifier}</span>
               </Link>
               {active ? (
                 <div className="ml-4 border-l pl-2">
@@ -84,7 +84,7 @@ function SubLink({ href, icon, label, active }: { href: string; icon: React.Reac
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-7 items-center gap-2 rounded-md px-2 text-[13px] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+        "flex h-7 items-center gap-2 rounded-md px-2 text-[0.875rem] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
         active && "bg-sidebar-accent text-foreground",
       )}
     >

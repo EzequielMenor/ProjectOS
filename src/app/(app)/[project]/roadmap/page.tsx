@@ -46,7 +46,7 @@ export default async function RoadmapPage({ params }: { params: Promise<{ projec
         <>
           {dated.length ? (
             <div className="mt-6 rounded-lg border" role="img" aria-label="Cronograma">
-              <div className="relative h-7 border-b text-[10px] text-muted-foreground">
+              <div className="relative h-7 border-b text-[0.75rem] text-muted-foreground">
                 {months.map((m) => (
                   <span key={m.label + m.left} className="absolute top-1.5 border-l pl-1" style={{ left: `${m.left}%` }}>{m.label}</span>
                 ))}

@@ -227,7 +227,7 @@ export function IssueDetail({
                   <li key={l.id}>
                     <a href={l.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm hover:underline">
                       <ExternalLink className="size-3.5 text-muted-foreground" />
-                      <span className="rounded border px-1 text-[10px] uppercase text-muted-foreground">{l.kind}</span>
+                      <span className="rounded border px-1 text-[0.75rem] uppercase text-muted-foreground">{l.kind}</span>
                       {l.title || l.url}
                     </a>
                   </li>

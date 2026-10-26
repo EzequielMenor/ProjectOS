@@ -108,7 +108,7 @@ function MultiFilter({
         )}
       >
         {title}
-        {selected.length ? <span className="rounded bg-primary px-1 text-[10px] text-primary-foreground tabular-nums">{selected.length}</span> : <ChevronDown className="size-3" />}
+        {selected.length ? <span className="rounded bg-primary px-1 text-[0.75rem] text-primary-foreground tabular-nums">{selected.length}</span> : <ChevronDown className="size-3" />}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 gap-0 p-0">
         <Command>

@@ -192,11 +192,11 @@ export function PaletteButton() {
   return (
     <button
       onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE))}
-      className="mx-2 mb-1 flex h-7 items-center gap-2 rounded-md border bg-background/50 px-2 text-[13px] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+      className="mx-2 mb-1 flex h-7 items-center gap-2 rounded-md border bg-background/50 px-2 text-[0.875rem] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
     >
       <Search className="size-3.5" />
       Buscar
-      <kbd className="ml-auto rounded border px-1 font-mono text-[10px]">Ctrl K</kbd>
+      <kbd className="ml-auto rounded border px-1 font-mono text-[0.75rem]">Ctrl K</kbd>
     </button>
   );
 }

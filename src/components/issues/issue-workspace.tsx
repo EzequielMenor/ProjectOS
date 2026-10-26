@@ -191,7 +191,7 @@ export function IssueWorkspace({
           onClick={() => setCreatingIn(defaultStateId ?? null)}
           className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground hover:opacity-90"
         >
-          <Plus className="size-3.5" /> Nuevo issue <kbd className="ml-1 rounded bg-white/20 px-1 text-[10px]">C</kbd>
+          <Plus className="size-3.5" /> Nuevo issue <kbd className="ml-1 rounded bg-white/20 px-1 text-[0.75rem]">C</kbd>
         </button>
       </header>
       <FilterBar filters={filters} onChange={setFilters} states={states} labels={labels} cycles={cycles} modules={modules} views={views} project={project} layout={view} />
@@ -342,7 +342,7 @@ function TableView({
               <td className="px-3">
                 <span className="flex flex-wrap gap-1">
                   {i.labels.map((l) => (
-                    <span key={l.id} className="inline-flex items-center gap-1 rounded-full border px-1.5 text-[11px]">
+                    <span key={l.id} className="inline-flex items-center gap-1 rounded-full border px-1.5 text-[0.8125rem]">
                       <span className="size-1.5 rounded-full" style={{ background: l.color }} />
                       {l.name}
                     </span>
@@ -480,7 +480,7 @@ function ListView({
                 </Link>
               )}
               {issue.labels.map((l) => (
-                <span key={l.id} className="hidden shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] sm:inline-flex">
+                <span key={l.id} className="hidden shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[0.8125rem] sm:inline-flex">
                   <span className="size-1.5 rounded-full" style={{ background: l.color }} />
                   {l.name}
                 </span>
@@ -639,14 +639,14 @@ function Card({ issue, href, selected, overlay }: { issue: IssueDTO; href?: stri
       )}
     >
       <div className="mb-1 flex items-center gap-2">
-        <span className="font-mono text-[11px] text-muted-foreground tabular-nums">{issue.key}</span>
+        <span className="font-mono text-[0.8125rem] text-muted-foreground tabular-nums">{issue.key}</span>
         <PriorityIcon priority={issue.priority} className="ml-auto" />
       </div>
       <p className="line-clamp-3 leading-snug">{issue.title}</p>
       {issue.labels.length ? (
         <div className="mt-2 flex flex-wrap gap-1">
           {issue.labels.map((l) => (
-            <span key={l.id} className="inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px]">
+            <span key={l.id} className="inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[0.75rem]">
               <span className="size-1.5 rounded-full" style={{ background: l.color }} />
               {l.name}
             </span>

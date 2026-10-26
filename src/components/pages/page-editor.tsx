@@ -91,7 +91,7 @@ export function PageEditor({ identifier, projectName, page, resolved, links, ver
         </Link>
         <ChevronRight className="size-3.5 text-muted-foreground" />
         <span className="truncate">{title}</span>
-        {page.archived ? <span className="rounded border px-1 text-[10px] uppercase text-muted-foreground">archivada</span> : null}
+        {page.archived ? <span className="rounded border px-1 text-[0.75rem] uppercase text-muted-foreground">archivada</span> : null}
         <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
           {saving ? "Guardando…" : dirty ? "Sin guardar" : "Guardado"}
         </span>
@@ -119,7 +119,7 @@ export function PageEditor({ identifier, projectName, page, resolved, links, ver
               placeholder="Escribe en Markdown. Enlaza issues con FICH-12 o [[FICH-12]] y páginas con [[Título]]."
               onChange={(e) => setContent(e.target.value)}
               onBlur={() => void save()}
-              className="mt-4 min-h-[60vh] resize-y font-mono text-[13px]"
+              className="mt-4 min-h-[60vh] resize-y font-mono text-[0.875rem]"
               autoFocus={!page.content}
             />
           ) : (
