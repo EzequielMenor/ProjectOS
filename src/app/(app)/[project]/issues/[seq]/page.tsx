@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import { IssueDetail } from "@/components/issues/issue-detail";
 import { ServiceError } from "@/server/errors";
 import { toStateDTO } from "@/server/dto";
-import { getIssueByKey, listActivity } from "@/server/services/issues";
+import { getIssueByKey, listActivity, listIssues } from "@/server/services/issues";
+import { listLabels } from "@/server/services/labels";
+import { listRelations } from "@/server/services/work";
 import { listCycles, listMilestones, listModules } from "@/server/services/planning";
 import { listStates } from "@/server/services/projects";
 
@@ -17,12 +19,15 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
     if (e instanceof ServiceError && (e.code === "not_found" || e.code === "invalid")) notFound();
     throw e;
   });
-  const [states, activity, cycles, modules, milestones] = await Promise.all([
+  const [states, activity, cycles, modules, milestones, labels, relations, siblings] = await Promise.all([
     listStates(issue.projectId),
     listActivity(issue.id),
     listCycles(issue.projectId),
     listModules(issue.projectId),
     listMilestones(issue.projectId),
+    listLabels(issue.projectId),
+    listRelations(issue.id),
+    listIssues({ projectId: issue.projectId, limit: 500 }),
   ]);
   const stateName = new Map(states.map((s) => [s.id, s.name]));
   return (
@@ -38,6 +43,13 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
         cycleId: issue.cycleId,
         milestoneId: issue.milestoneId,
         moduleIds: issue.modules.map((m) => m.moduleId),
+        projectId: issue.projectId,
+        labelIds: issue.labels.map((l) => l.labelId),
+        dueDate: issue.dueDate,
+        estimate: issue.estimate,
+        parent: issue.parent ? { id: issue.parent.id, key: `${issue.project.identifier}-${issue.parent.seq}`, title: issue.parent.title } : null,
+        children: issue.children.map((c) => ({ id: c.id, key: `${issue.project.identifier}-${c.seq}`, title: c.title, stateGroup: c.state.group, stateColor: c.state.color })),
+        relations: relations.map((r) => ({ type: r.type, id: r.id, key: r.key, title: r.title, stateGroup: r.stateGroup })),
         projectIdentifier: issue.project.identifier,
         projectName: issue.project.name,
         createdAt: issue.createdAt.toISOString(),
@@ -45,6 +57,10 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
         links: issue.links.map((l) => ({ id: l.id, kind: l.kind, url: l.url, title: l.title })),
       }}
       states={states.map(toStateDTO)}
+      labels={labels.map((l) => ({ id: l.id, name: l.name, color: l.color }))}
+      candidates={siblings
+        .filter((i) => i.id !== issue.id)
+        .map((i) => ({ id: i.id, key: `${issue.project.identifier}-${i.seq}`, title: i.title, stateGroup: i.state.group, stateColor: i.state.color }))}
       planning={{
         cycles: cycles.map((c) => ({ id: c.id, name: c.name })),
         modules: modules.map((m) => ({ id: m.id, name: m.name })),

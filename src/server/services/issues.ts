@@ -366,6 +366,34 @@ export async function addRelation(issueId: string, raw: unknown, actor = "user")
   return created ?? null;
 }
 
+/** UI-only (not exposed to agents): unlinks one relation, in either direction, and records it. */
+export async function removeRelation(issueId: string, raw: unknown, actor = "user") {
+  const input = addRelationInput.parse(raw);
+  const db = await getDb();
+  const a = await findIssueRow(db, issueId);
+  const removed = await db
+    .delete(issueRelation)
+    .where(
+      and(
+        eq(issueRelation.type, input.type),
+        or(
+          and(eq(issueRelation.issueId, issueId), eq(issueRelation.relatedIssueId, input.relatedIssueId)),
+          and(eq(issueRelation.issueId, input.relatedIssueId), eq(issueRelation.relatedIssueId, issueId)),
+        ),
+      ),
+    )
+    .returning({ id: issueRelation.id });
+  if (removed.length)
+    await db.insert(activity).values({
+      projectId: a.projectId,
+      issueId,
+      actor,
+      action: "relation.removed",
+      data: { relatedIssueId: input.relatedIssueId, type: input.type },
+    });
+  return removed.length;
+}
+
 export async function listActivity(issueId: string) {
   const db = await getDb();
   return db.query.activity.findMany({ where: eq(activity.issueId, issueId), orderBy: asc(activity.createdAt) });

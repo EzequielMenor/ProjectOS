@@ -23,7 +23,7 @@ export async function listRelations(issueId: string) {
     const o = byId.get(outgoing ? r.relatedIssueId : r.issueId)!;
     // "blocks" is directional; show the reverse as "blocked_by" from the other side.
     const type = r.type === "blocks" && !outgoing ? "blocked_by" : r.type;
-    return { type, key: `${o.project.identifier}-${o.seq}`, title: o.title, state: o.state.name, stateGroup: o.state.group };
+    return { type, id: o.id, key: `${o.project.identifier}-${o.seq}`, title: o.title, state: o.state.name, stateGroup: o.state.group };
   });
 }
 

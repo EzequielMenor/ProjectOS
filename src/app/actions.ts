@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { ServiceError } from "@/server/errors";
 import type { Priority, StateGroup } from "@/db/schema";
-import { addComment, createIssue, issueKey, moveIssue, searchIssues, setIssueArchived, updateIssue } from "@/server/services/issues";
+import { addComment, addRelation, createIssue, issueKey, moveIssue, removeRelation, searchIssues, setIssueArchived, updateIssue } from "@/server/services/issues";
+import { ensureLabel } from "@/server/services/labels";
 import { createProject } from "@/server/services/projects";
 import { createToken, revokeToken } from "@/server/services/tokens";
 import { assignIssue, createCycle, createMilestone, createModule } from "@/server/services/planning";
@@ -86,6 +87,25 @@ export async function createPlanningAction(kind: "cycle" | "module" | "milestone
 export async function assignIssueAction(issueId: string, input: unknown) {
   return run(async () => {
     await assignIssue(issueId, input);
+  });
+}
+
+export async function addRelationAction(issueId: string, input: unknown) {
+  return run(async () => {
+    await addRelation(issueId, input);
+  });
+}
+
+export async function removeRelationAction(issueId: string, input: unknown) {
+  return run(async () => {
+    await removeRelation(issueId, input);
+  });
+}
+
+export async function createLabelAction(input: unknown) {
+  return run(async () => {
+    const l = await ensureLabel(input);
+    return { id: l.id, name: l.name, color: l.color };
   });
 }
 

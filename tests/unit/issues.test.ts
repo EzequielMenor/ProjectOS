@@ -6,6 +6,8 @@ import {
   moveIssue,
   updateIssue,
   addRelation,
+  removeRelation,
+  searchIssues,
   setIssueArchived,
 } from "@/server/services/issues";
 import { createProject, listStates } from "@/server/services/projects";
@@ -87,5 +89,26 @@ describe("issues", () => {
     await setIssueArchived(a.id, true);
     expect((await listIssues({ projectId })).some((r) => r.id === a.id)).toBe(false);
     expect((await listIssues({ projectId, includeArchived: true })).some((r) => r.id === a.id)).toBe(true);
+  });
+
+  it("removes a relation from either side and only that type", async () => {
+    const a = await createIssue({ projectId, title: "rel-a" });
+    const b = await createIssue({ projectId, title: "rel-b" });
+    await addRelation(a.id, { relatedIssueId: b.id, type: "blocks" });
+    await addRelation(a.id, { relatedIssueId: b.id, type: "relates" });
+    expect(await removeRelation(b.id, { relatedIssueId: a.id, type: "blocks" })).toBe(1);
+    expect(await removeRelation(b.id, { relatedIssueId: a.id, type: "blocks" })).toBe(0);
+    expect((await getIssueByKey(`DEMO-${a.seq}`)).id).toBe(a.id);
+  });
+
+  it("search ranks exact key, then titles, and treats % and _ literally", async () => {
+    const t = await createIssue({ projectId, title: "Informe 100% listo" });
+    await createIssue({ projectId, title: "otro", description: "menciona 100% en la descripción" });
+    await createIssue({ projectId, title: "Informe 1000 filas" });
+    const byKey = await searchIssues(`demo-${t.seq}`);
+    expect(byKey[0].id).toBe(t.id);
+    const pct = await searchIssues("100%");
+    expect(pct.map((r) => r.title)).toEqual(["Informe 100% listo", "otro"]);
+    expect(await searchIssues("_")).toEqual([]);
   });
 });
