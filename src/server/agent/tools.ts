@@ -14,6 +14,7 @@ import {
   setIssueArchived,
   updateIssue,
 } from "../services/issues";
+import { childProgress, listEpics } from "../services/epics";
 import { listLabels, resolveLabelIds } from "../services/labels";
 import { assignIssue, createCycle, createMilestone, createModule, listCycles, listMilestones, listModules } from "../services/planning";
 import { getProjectByIdentifier, listProjects, listStates } from "../services/projects";
@@ -171,18 +172,39 @@ export const TOOLS: ToolDef[] = [
     },
   }),
   tool({
+    name: "list_epics",
+    description:
+      "List a project's epics with their progress (done/total of their direct sub-issues, cancelled ones excluded) and sub-issue keys. Create an epic with create_issue type 'epic'; add work to it with parent.",
+    scope: "read",
+    shape: { project: projectArg },
+    run: async ({ project: pr }) => {
+      const p = await project(pr);
+      const rows = await listEpics(p.id);
+      return rows.map((e) => ({
+        key: e.key,
+        title: e.title,
+        state: e.state.name,
+        priority: e.priority,
+        dueDate: e.dueDate,
+        progress: { ...e.progress, percentDone: e.progress.total - e.progress.cancelled > 0 ? Math.round((e.progress.completed / (e.progress.total - e.progress.cancelled)) * 100) : 0 },
+        children: e.children.map((c) => c.key),
+      }));
+    },
+  }),
+  tool({
     name: "get_issue",
     description: "Get one issue in full: description, comments, links (commits/PRs/evidence), relations, children and activity.",
     scope: "read",
     shape: { key },
     run: async ({ key: k }) => {
       const i = await getIssueByKey(k);
-      const [relations, activity] = await Promise.all([listRelations(i.id), listActivity(i.id)]);
+      const [relations, activity, prog] = await Promise.all([listRelations(i.id), listActivity(i.id), childProgress([i.id])]);
       return {
         ...summary(i, i.project.identifier),
         description: i.description,
         parent: i.parent ? issueKey(i.project.identifier, i.parent.seq) : null,
         children: i.children.map((c) => ({ key: issueKey(i.project.identifier, c.seq), title: c.title, state: c.state.name })),
+        childProgress: prog.get(i.id) ?? null,
         relations,
         links: i.links.map((l) => ({ kind: l.kind, url: l.url, title: l.title, by: l.actor })),
         comments: i.comments.map((c) => ({ by: c.actor, at: c.createdAt, body: c.body })),

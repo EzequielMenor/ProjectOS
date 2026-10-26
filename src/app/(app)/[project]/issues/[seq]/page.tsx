@@ -38,6 +38,7 @@ export default async function IssuePage({ params }: { params: Promise<{ project:
       issue={{
         id: issue.id,
         key: `${issue.project.identifier}-${issue.seq}`,
+        type: issue.type,
         title: issue.title,
         description: issue.description,
         stateId: issue.stateId,

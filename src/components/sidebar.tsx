@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, LayoutList, Moon, Plus, Settings, Sun, Table2 } from "lucide-react";
+import { Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, Layers, LayoutList, Moon, Plus, Settings, Sun, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaletteButton } from "@/components/command-palette";
 import { TextSizeControl } from "@/components/text-size-control";
@@ -59,6 +59,7 @@ export function Sidebar({ projects, uiSize }: { projects: P[]; uiSize: number })
                   <SubLink href={`/${p.identifier}/list`} icon={<LayoutList className="size-3.5" />} label="Lista" active={pathname.endsWith("/list")} />
                   <SubLink href={`/${p.identifier}/board`} icon={<Columns3 className="size-3.5" />} label="Kanban" active={pathname.endsWith("/board")} />
                   <SubLink href={`/${p.identifier}/table`} icon={<Table2 className="size-3.5" />} label="Tabla" active={pathname.endsWith("/table")} />
+                  <SubLink href={`/${p.identifier}/epics`} icon={<Layers className="size-3.5" />} label="Épicas" active={pathname.endsWith("/epics")} />
                   <SubLink href={`/${p.identifier}/cycles`} icon={<CalendarRange className="size-3.5" />} label="Ciclos" active={pathname.endsWith("/cycles")} />
                   <SubLink href={`/${p.identifier}/modules`} icon={<Boxes className="size-3.5" />} label="Módulos" active={pathname.endsWith("/modules")} />
                   <SubLink href={`/${p.identifier}/milestones`} icon={<Flag className="size-3.5" />} label="Hitos" active={pathname.endsWith("/milestones")} />

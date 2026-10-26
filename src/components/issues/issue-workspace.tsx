@@ -26,7 +26,7 @@ import type { IssueDTO, LabelDTO, StateDTO } from "@/server/dto";
 import { applyFilters, parseFilters, serializeFilters, type Filters } from "@/lib/issue-filters";
 import { FilterBar, type SavedViewDTO } from "./filter-bar";
 import { createIssueAction, moveIssueAction, updateIssueAction } from "@/app/actions";
-import { PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
+import { EpicBadge, PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
 import { cn } from "@/lib/utils";
 import { OptionPicker } from "./option-picker";
 
@@ -324,7 +324,7 @@ function TableView({
                   <PriorityIcon priority={i.priority} />
                 </OptionPicker>
               </td>
-              <td className="px-3 font-mono text-xs text-muted-foreground tabular-nums">{i.key}</td>
+              <td className="px-3 font-mono text-xs text-muted-foreground tabular-nums"><span className="mr-1.5">{i.key}</span><EpicBadge type={i.type} /></td>
               <td className="max-w-0 px-3">
                 {i.pending ? <span className="block truncate">{i.title}</span> : <Link href={`/${project.identifier}/issues/${i.seq}`} className="block truncate hover:underline">{i.title}</Link>}
               </td>
@@ -479,6 +479,7 @@ function ListView({
                   {issue.title}
                 </Link>
               )}
+              <EpicBadge type={issue.type} />
               {issue.labels.map((l) => (
                 <span key={l.id} className="hidden shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[0.8125rem] sm:inline-flex">
                   <span className="size-1.5 rounded-full" style={{ background: l.color }} />
@@ -640,6 +641,7 @@ function Card({ issue, href, selected, overlay }: { issue: IssueDTO; href?: stri
     >
       <div className="mb-1 flex items-center gap-2">
         <span className="font-mono text-[0.8125rem] text-muted-foreground tabular-nums">{issue.key}</span>
+        <EpicBadge type={issue.type} />
         <PriorityIcon priority={issue.priority} className="ml-auto" />
       </div>
       <p className="line-clamp-3 leading-snug">{issue.title}</p>

@@ -96,3 +96,13 @@ export function PriorityIcon({ priority, className }: { priority: Priority; clas
     </svg>
   );
 }
+
+/** Marks epics in cards and rows; plain issues render nothing. */
+export function EpicBadge({ type }: { type: string }) {
+  if (type !== "epic") return null;
+  return (
+    <span className="shrink-0 rounded border border-violet-500/40 bg-violet-500/10 px-1 text-[0.75rem] leading-snug text-violet-700 dark:text-violet-300">
+      Épica
+    </span>
+  );
+}

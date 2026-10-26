@@ -52,7 +52,7 @@ Las migraciones (`drizzle/`) se aplican solas al arrancar.
 
    | Lectura | Escritura |
    |---|---|
-   | `list_projects`, `get_project`, `list_issues`, `get_issue`, `search`, `next_work`, `list_cycles`, `list_modules`, `list_milestones`, `list_pages`, `get_page`, `search_pages`, `list_page_versions` | `create_issue`, `update_issue`, `set_state`, `complete_issue`, `add_comment`, `log_progress`, `add_link` (commit/PR/evidencia), `add_relation`, `archive_issue`, `create_cycle`, `create_module`, `create_milestone`, `assign_issue`, `create_page`, `update_page`, `append_to_page`, `restore_page_version`, `archive_page` |
+   | `list_projects`, `get_project`, `list_issues`, `get_issue`, `search`, `next_work`, `list_cycles`, `list_modules`, `list_milestones`, `list_epics`, `list_pages`, `get_page`, `search_pages`, `list_page_versions` | `create_issue`, `update_issue`, `set_state`, `complete_issue`, `add_comment`, `log_progress`, `add_link` (commit/PR/evidencia), `add_relation`, `archive_issue`, `create_cycle`, `create_module`, `create_milestone`, `assign_issue`, `create_page`, `update_page`, `append_to_page`, `restore_page_version`, `archive_page` |
 
 **Docs**: las páginas son Markdown (editor con vista previa; sin editor WYSIWYG a propósito: el texto plano es lo que mejor
 leen y escriben los agentes). `FICH-12`, `[[FICH-12]]` y `[[Título]]` crean enlaces bidireccionales (el issue muestra «Mencionado
@@ -63,6 +63,11 @@ en», la página muestra «Enlazada desde»). Cada edición conserva la versión
 MCP ejecutó `next_work` → `set_state` → `log_progress` (con evidencia de commit) → `create_page` (con `[[CCT-2]]`); después se
 comprobó por REST que el issue quedó En progreso con comentario y enlace, y que la página enlaza al otro issue, todo con
 actor `agent:<token>`.
+
+**Épicas** (`/<PROY>/epics`): una épica es un issue de tipo «Épica» y su progreso sale de sus subtareas directas (las
+canceladas y archivadas no cuentan). Se crean desde la página, o se convierte cualquier issue desde su ficha (campo Tipo).
+Para agentes: `create_issue` con `type: "epic"`, `parent` para añadir trabajo, `list_epics` para ver el progreso y
+`get_issue` devuelve `childProgress`. `next_work` nunca propone épicas, solo el trabajo concreto.
 
 **Tamaño de la interfaz**: control `A−  %  A+` al pie de la barra lateral (14–24 px, por defecto 18). Se guarda en una
 cookie del navegador y el servidor lo aplica en el primer pintado; `Restablecer` vuelve al valor por defecto.

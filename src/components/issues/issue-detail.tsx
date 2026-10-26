@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ChevronRight, ExternalLink, FileText, X } from "lucide-react";
-import { PRIORITIES, type Priority, type StateGroup } from "@/db/schema";
+import { PRIORITIES, type IssueType, type Priority, type StateGroup } from "@/db/schema";
 import type { StateDTO } from "@/server/dto";
 import {
   addCommentAction,
@@ -18,6 +18,7 @@ import {
 } from "@/app/actions";
 import { PRIORITY_LABEL, PriorityIcon, StateIcon } from "@/lib/issue-meta";
 import { Markdown } from "@/components/markdown";
+import { ProgressBar } from "@/components/planning/progress-bar";
 import { Textarea } from "@/components/ui/textarea";
 import { OptionPicker } from "./option-picker";
 import { LabelPicker, type LabelOption } from "./label-picker";
@@ -26,6 +27,7 @@ import { IssuePicker, type IssueOption } from "./issue-picker";
 type Detail = {
   id: string;
   key: string;
+  type: IssueType;
   title: string;
   description: string;
   stateId: string;
@@ -237,6 +239,7 @@ export function IssueDetail({
           ) : null}
           <section className="mt-8" aria-label="Subtareas">
             <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Subtareas</h2>
+            {issue.children.length ? <ChildProgress items={issue.children} /> : null}
             {issue.children.length ? (
               <ul className="mb-2 flex flex-col">
                 {issue.children.map((c) => (
@@ -395,6 +398,19 @@ export function IssueDetail({
               </span>
             </OptionPicker>
             <OptionPicker
+              title="Tipo"
+              value={issue.type}
+              onChange={(v) => save({ type: v })}
+              options={[
+                { value: "issue", label: "Issue" },
+                { value: "epic", label: "Épica" },
+              ]}
+              className="w-full"
+            >
+              <span className="text-muted-foreground">Tipo</span>
+              <span className="ml-auto">{issue.type === "epic" ? "Épica" : "Issue"}</span>
+            </OptionPicker>
+            <OptionPicker
               title="Ciclo"
               value={issue.cycleId ?? NONE}
               onChange={(v) => assign({ cycleId: v === NONE ? null : v })}
@@ -487,6 +503,15 @@ export function IssueDetail({
           <p className="mt-6 text-xs text-muted-foreground">Creado {fmt.format(new Date(issue.createdAt))}</p>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function ChildProgress({ items }: { items: Detail["children"] }) {
+  const count = (g: StateGroup) => items.filter((c) => c.stateGroup === g).length;
+  return (
+    <div className="mb-2 px-1.5">
+      <ProgressBar progress={{ total: items.length, completed: count("completed"), started: count("started"), cancelled: count("cancelled") }} />
     </div>
   );
 }
