@@ -1,82 +1,153 @@
+<div align="center">
+
 # ProjectOS
 
-Gestor de proyectos **local-first y self-hosted** (issues, Kanban, listas, tabla, épicas, ciclos, módulos, hitos y documentos)
-pensado para que **lo manejen agentes de IA** mediante un servidor MCP y una API, y para que tú entres a ver cómo va.
-Sin cuentas, sin suscripciones, sin nube: tus datos viven en tu máquina.
+**Un gestor de proyectos local y privado, hecho para que lo manejen agentes de IA.**
+Tú ves cómo va; el agente hace el 90 % del trabajo de mantenerlo al día.
 
-> **Versión 0.1.0** · ver [`CHANGELOG.md`](CHANGELOG.md). Uso personal: una sola persona, **sin inicio de sesión**
-> (lee [`docs/security.md`](docs/security.md) antes de abrirlo a una red).
+![Versión](https://img.shields.io/badge/versi%C3%B3n-0.1.0-5b5bd6)
+![Node](https://img.shields.io/badge/node-24%2B-3c873a)
+![Local first](https://img.shields.io/badge/datos-100%25%20locales-0b7285)
+![MCP](https://img.shields.io/badge/agentes-MCP%20%2B%20REST-b45309)
 
-## Qué incluye
+[Instalar](#instalación) · [Primeros pasos](#primeros-pasos) · [Agentes](#trabajar-con-agentes) · [Documentación](#documentación)
 
-- **Trabajo**: issues con estados propios por proyecto, prioridad, etiquetas, subtareas, relaciones (bloquea / duplica / relaciona),
-  asignados (personas y agentes), propiedades personalizadas, fechas y estimaciones. Vistas Lista, Kanban y Tabla con filtros,
-  vistas guardadas y paleta de comandos (`Ctrl K`).
-- **Planificación**: épicas con progreso, ciclos, módulos, hitos y roadmap.
-- **Documentos**: páginas en Markdown con enlaces bidireccionales (`[[FICH-12]]`) e historial de versiones.
-- **Para agentes**: 41 herramientas (16 de lectura, 25 de escritura) por MCP y REST, con permisos `read` / `write`, sin herramientas de borrado y con cada
-  cambio registrado como `agent:<nombre>`. La pantalla de tokens genera el comando, el JSON y un prompt para configurar al agente.
-- **Datos a salvo**: copia automática diaria con rotación, copias manuales, restauración con simulación previa.
-- **Interfaz**: tema claro/oscuro, tamaño de interfaz ajustable, responsive (móvil), accesibilidad comprobada con axe.
+<img src="docs/img/board.png" alt="Tablero Kanban de ProjectOS con un proyecto de ejemplo" width="900">
 
-## Empezar (5 minutos)
+<sub>Proyecto de ejemplo. Los datos de las capturas no son reales.</sub>
 
-Requisitos: **Node 24+** y **pnpm 9**. No necesitas Docker ni base de datos: usa PostgreSQL embebido (PGlite) en `./data/pg`.
+</div>
+
+---
+
+## ¿Qué es?
+
+ProjectOS reúne lo mejor de Linear (rapidez, teclado, interfaz sobria) y de Plane (módulos, ciclos, documentos, propiedades
+propias) en una aplicación que **corre en tu ordenador**. No hay cuentas, suscripciones, límites ni nube: tus datos están en una
+carpeta tuya.
+
+Su rasgo principal es que **está pensado para agentes de IA** (Claude Code y cualquier cliente MCP). Un agente puede leer qué
+toca hacer, cambiar el estado de una tarea, anotar avances con pruebas (commits, PR) y cerrar lo que está terminado, todo por
+una API con permisos. Tú abres la interfaz cuando quieres ver el estado.
+
+```
+   Tú ──── navegador ────┐
+                         ├──►  ProjectOS  ──►  tus datos (carpeta local)
+   Agente ── MCP / REST ─┘     (localhost)
+```
+
+## Qué puedes hacer
+
+| | |
+|---|---|
+| **Trabajo diario** | Issues con estados propios por proyecto, prioridad, etiquetas, subtareas, relaciones (bloquea, duplica), asignados (personas y agentes), propiedades personalizadas, fechas y estimaciones. Vistas **Lista, Kanban y Tabla** con filtros, vistas guardadas y paleta de comandos (`Ctrl K`) |
+| **Planificación** | Épicas con progreso, ciclos, módulos, hitos y roadmap |
+| **Documentos** | Páginas en Markdown con enlaces bidireccionales (`[[FICH-12]]`) e historial de versiones |
+| **Agentes** | 41 herramientas por MCP y REST, permisos `read` / `write`, **sin herramientas de borrado**, cada cambio registrado como `agent:<nombre>` |
+| **Tus datos a salvo** | Copia automática diaria con rotación, copias manuales, restauración con simulación previa, importador de Plane |
+| **Comodidad** | Tema claro y oscuro, tamaño de interfaz ajustable, diseño móvil, accesibilidad auditada (WCAG 2.1 AA) |
+
+<table>
+<tr>
+<td width="50%"><img src="docs/img/issue.png" alt="Ficha de un issue con descripción, enlaces a commits y actividad del agente"><br><sub><b>La ficha de un issue</b>: lo que hizo el agente queda con pruebas.</sub></td>
+<td width="50%"><img src="docs/img/epics.png" alt="Épicas con su progreso y sus subtareas"><br><sub><b>Épicas</b>: el progreso sale de las subtareas.</sub></td>
+</tr>
+</table>
+
+## Instalación
+
+**Necesitas** [Node 24+](https://nodejs.org) y [pnpm 9](https://pnpm.io/installation). No hace falta Docker ni instalar ninguna base de datos:
+ProjectOS lleva PostgreSQL embebido y guarda todo en `./data`.
 
 ```bash
-git clone https://github.com/EzequielMenor/ProjectOS.git projectos && cd projectos
+git clone https://github.com/EzequielMenor/ProjectOS.git projectos
+cd projectos
 pnpm install
-pnpm build && pnpm start        # http://localhost:3000
+pnpm build
+pnpm start
 ```
 
-Se abre vacío: crea tu primer proyecto desde la propia aplicación. Por defecto **solo escucha en `127.0.0.1`**
-(accesible desde tu propio ordenador y desde ningún otro).
+Abre **http://localhost:3000**. Se abre vacío: crea tu primer proyecto desde la propia aplicación.
 
-Para dejarlo siempre encendido, ver [`docs/install.md`](docs/install.md) (servicio systemd en Linux, actualizaciones, Docker).
+> Por defecto la aplicación **solo escucha en tu propio ordenador** (`127.0.0.1`). No tiene inicio de sesión, así que no la
+> abras a tu red sin leer [`docs/security.md`](docs/security.md).
 
-## Conectar un agente
+**¿Quieres que esté siempre encendida?** En Linux hay un servicio de usuario listo (`scripts/projectos.service`): arranca solo
+y se reinicia si falla. Pasos, actualizaciones y copias de seguridad en [`docs/install.md`](docs/install.md).
 
-1. En la aplicación: **Tokens de API** → crea un token (`write` para que pueda trabajar, `read` para que solo consulte).
-2. Debajo aparece **«Configurar en el agente»** con tres opciones ya rellenas con tu token: el comando de Claude Code, el JSON
-   para otros clientes MCP y un prompt para que el propio agente se configure.
+## Primeros pasos
 
-```bash
-claude mcp add --transport http --scope user projectos http://localhost:3000/api/mcp \
-  --header "Authorization: Bearer pos_XXXX"
-```
+1. **Crea un proyecto.** Elige un identificador corto (`WEB`, `FICH`…): tus issues serán `WEB-1`, `WEB-2`…
+2. **Crea algo de trabajo** con el botón *Nuevo issue* (o la tecla `C`) y arrástralo entre columnas en el Kanban. Pulsa `Ctrl K`
+   para buscar o saltar a cualquier sitio.
+3. **Conecta a un agente** (siguiente apartado).
 
-Guía completa (qué poner en el `CLAUDE.md` de cada repo, garantías, copias): [`docs/agents.md`](docs/agents.md).
+La guía completa de funciones, con atajos, filtros, épicas, documentos y propiedades, está en [`docs/usage.md`](docs/usage.md).
+
+## Trabajar con agentes
+
+1. En la aplicación, abre **Tokens de API** y crea un token: `write` para un agente que trabaja, `read` para uno que solo consulta.
+   Ponle el nombre del agente (`claude-code`): así sabrás quién hizo cada cambio.
+2. Justo debajo aparece **«Configurar en el agente»**, ya rellena con tu token. Tienes tres opciones:
+   - **Claude Code**: un comando para copiar y pegar.
+   - **Otros clientes MCP**: el JSON de configuración.
+   - **Prompt para el agente**: un texto detallado que pegas en el agente y él se configura solo (se registra, busca su proyecto,
+     añade la sección a su `CLAUDE.md` y se da de alta como miembro).
+
+   En Claude Code el comando tiene esta forma:
+
+   ```bash
+   claude mcp add --transport http --scope user projectos http://localhost:3000/api/mcp \
+     --header "Authorization: Bearer pos_XXXX"
+   ```
+
+3. Dile al agente qué hacer: *«Mira qué toca en el proyecto WEB y empieza por lo más urgente»*. Al conectarse recibe un acuerdo
+   de trabajo: pide la siguiente tarea (`next_work`), la lee, la marca en curso, anota avances **con evidencia** (commit, PR,
+   resultado de tests) y solo cierra lo que está verificado.
+
+**Lo que un agente puede y no puede hacer.** Puede crear y editar issues, comentar, planificar (ciclos, módulos, hitos),
+escribir documentos y crear proyectos y estados. **No puede borrar nada ni tocar la estructura sensible** (renombrar o borrar
+proyectos y estados, tokens, copias de seguridad): eso queda para ti, en la interfaz. Detalle en [`docs/agents.md`](docs/agents.md).
 
 ## Documentación
 
-| Documento | Contenido |
+| Quiero… | Lee |
 |---|---|
-| [`docs/install.md`](docs/install.md) | Instalación, arranque permanente, actualizar, copias de seguridad, Docker, variables de entorno |
-| [`docs/usage.md`](docs/usage.md) | Guía de funciones: vistas, épicas, atajos, miembros, propiedades, documentos… |
-| [`docs/agents.md`](docs/agents.md) | Trabajar con agentes: conectar, herramientas, garantías |
-| [`docs/security.md`](docs/security.md) | Qué protege y qué no: sin login, red local, tokens, datos |
-| [`docs/architecture.md`](docs/architecture.md) | Cómo está construido, para quien quiera tocar el código |
-| [`docs/development.md`](docs/development.md) | Tests, migraciones, convenciones |
-| [`docs/migration.md`](docs/migration.md) | Importar desde Plane |
-| [`docs/roadmap.md`](docs/roadmap.md) | Qué está hecho y qué queda |
-| [`docs/research.md`](docs/research.md) | Patrones de Linear y Plane que inspiraron el diseño |
+| Instalar, dejarlo siempre encendido, actualizar o restaurar copias | [`docs/install.md`](docs/install.md) |
+| Aprender a usar la aplicación | [`docs/usage.md`](docs/usage.md) |
+| Conectar y gobernar agentes | [`docs/agents.md`](docs/agents.md) |
+| Saber qué protege y qué no | [`docs/security.md`](docs/security.md) |
+| Entender cómo está hecho | [`docs/architecture.md`](docs/architecture.md) |
+| Tocar el código, correr los tests | [`docs/development.md`](docs/development.md) |
+| Traer mis proyectos de Plane | [`docs/migration.md`](docs/migration.md) |
+| Ver qué se ha hecho y qué falta | [`docs/roadmap.md`](docs/roadmap.md) · [`CHANGELOG.md`](CHANGELOG.md) |
 
-## Estado y límites (sin maquillar)
+## Seguridad en tres líneas
 
-- Verificado: servicios, herramientas del agente, copias y restauración (tests unitarios); flujos de interfaz, móvil y
-  accesibilidad (Playwright); un cliente MCP real conectándose con la configuración que muestra la pantalla; un Claude Code real
-  completando un ciclo `next_work → set_state → log_progress → create_page`; el servidor de producción y el servicio systemd en Linux.
-- **Sin verificar**: Docker Compose (escrito, no ejecutado), Windows y macOS, un dispositivo móvil real (solo emulación) y
-  sesiones largas de agentes reales.
-- **Una sola persona**: no hay cuentas ni permisos por usuario. Los «miembros» son etiquetas para repartir trabajo.
-- Sin licencia publicada todavía: todos los derechos reservados hasta que se decida una.
+- Escucha solo en `127.0.0.1` por defecto y **no tiene inicio de sesión**: pensado para una persona en su propio equipo.
+- Los tokens de los agentes se guardan como hash, tienen permisos y se pueden revocar. No hay herramientas de borrado.
+- Tus datos viven en `./data` (fuera de git). Haz copias: la app guarda una al día, pero en el mismo disco.
 
-## Comandos habituales
+## Estado del proyecto
+
+**Versión 0.1.0.** Verificado: la lógica y las herramientas del agente (tests unitarios), los flujos de la interfaz, el móvil
+emulado y la accesibilidad (tests de navegador), un cliente MCP real conectándose con la configuración que muestra la pantalla,
+un Claude Code real completando un ciclo de trabajo, y el servidor de producción con el servicio de systemd en Linux.
+
+**Sin verificar todavía:** Docker Compose (está escrito, no se ha ejecutado), Windows y macOS, un móvil real, y sesiones largas
+con agentes reales. Tampoco hay edición de ciclos, módulos e hitos desde la interfaz (solo los agentes pueden editarlos).
+
+Es una aplicación de **una sola persona**: no hay cuentas ni permisos por usuario; los «miembros» son etiquetas para repartir
+trabajo. Sin licencia publicada de momento: todos los derechos reservados.
+
+## Para desarrollar
 
 ```bash
-pnpm dev            # desarrollo (para antes el servidor de producción: PGlite admite un solo proceso)
+pnpm dev            # desarrollo (para antes el servidor de producción: la base embebida admite un solo proceso)
 pnpm test           # tests unitarios (Vitest)
-pnpm test:e2e       # tests de interfaz (Playwright, base de datos temporal aparte)
+pnpm test:e2e       # tests de interfaz (Playwright, con una base de datos temporal aparte)
 pnpm typecheck && pnpm lint
-pnpm backup         # copia de seguridad por línea de comandos
 ```
+
+Pila: Next.js 16 · TypeScript · Tailwind + shadcn/base-ui · Drizzle (PGlite o PostgreSQL) · SDK oficial de MCP.
+Más en [`docs/development.md`](docs/development.md) y [`docs/architecture.md`](docs/architecture.md).
