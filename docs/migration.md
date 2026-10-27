@@ -41,8 +41,7 @@ Los elementos importados llevan `createdBy = plane-import` y un evento `project.
 
 ## Lo que NO se importa (todavía) y se avisa
 
-- **Páginas** de Plane: se guardan en el snapshot, pero el importador todavía no las convierte a Docs. En el workspace
-  `ezequieldev` se comprobó (snapshot y consulta directa a Plane) que no existe ninguna salvo la de bienvenida, vacía, así
+- **Páginas** de Plane: se guardan en el snapshot, pero el importador todavía no las convierte a Docs. En el workspace del autor se comprobó (snapshot y consulta directa a Plane) que no existe ninguna salvo la de bienvenida, vacía, así
   que no había nada que traer. Lo que sí tenía contenido real son las **descripciones de proyecto** (FICH y AIES): se
   guardan en el proyecto, pero la interfaz no las muestra, así que se copiaron a una página de Docs «Resumen del proyecto
   (importado de Plane)» en cada uno (con los `AIES-10` convertidos en enlaces). Se hizo con un script puntual, no con el CLI.
@@ -59,5 +58,5 @@ Plane con una clave real**; ese es el primer paso antes de importar de verdad (`
 
 # Migración desde Linear
 
-Pendiente. Requiere una clave de API de Linear (o un export CSV/JSON) y se implementará con el mismo esquema: snapshot crudo,
-plan, validación, copia previa y escritura transaccional.
+**Descartado**: no se usa Linear. Si algún día hiciera falta, se implementaría con el mismo esquema (snapshot crudo, plan,
+validación, copia previa y escritura transaccional).

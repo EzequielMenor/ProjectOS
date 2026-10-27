@@ -14,6 +14,8 @@ Criterio: primero lo que impide usar la app cada día, después lo que la proteg
 | 7 | ~~Importador de Linear~~ | No se usa Linear | **descartado** (decisión del usuario) |
 | 8 | **Verificar Docker Compose** | No hace falta para el uso diario (se usa `pnpm start` + systemd) | opcional: necesita `sudo usermod -aG docker $USER` |
 | 9 | **Uso real con agentes**: copia automática diaria con rotación, instrucciones MCP que reciben los agentes al conectarse, guía `docs/agents.md`, servicio systemd | Lo mínimo para empezar a trabajar en proyectos de verdad | **hecho** |
+| 10 | **Ampliar lo que gestionan los agentes**: crear proyectos y estados, editar ciclos, módulos e hitos; respuestas compactas | Que el 90 % del trabajo lo lleve el agente sin gastar tokens de más | **hecho** |
+| 11 | **Publicar y documentar** (v0.1.0): documentación por temas, CHANGELOG, escucha solo en `127.0.0.1`, repositorio en GitHub | Poder darle una copia a otra persona | **hecho** |
 
-Decisiones que se quedan con el usuario (modifican sus datos): convertir en épicas los issues de AIES con subtareas (AIES-1, AIES-2…),
-importar el proyecto de demostración EZEQU de Plane, revocar la clave de Plane.
+Decisiones que se quedan con el autor (modifican sus datos): convertir en épicas los issues con subtareas de su proyecto AIES,
+importar un proyecto de demostración de Plane y revocar la clave de Plane usada en la migración.

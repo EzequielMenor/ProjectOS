@@ -8,6 +8,7 @@
 #   4. systemctl --user daemon-reload && systemctl --user enable --now projectos
 #      loginctl enable-linger $USER      # (opcional) que arranque sin sesión abierta
 #
+# Escucha solo en 127.0.0.1 (la app no tiene login). Para abrirla a tu red cambia -H, sabiendo lo que implica: docs/security.md
 # Logs: journalctl --user -u projectos -f      Tras actualizar el código: pnpm build && systemctl --user restart projectos
 [Unit]
 Description=ProjectOS
@@ -17,7 +18,7 @@ After=network.target
 WorkingDirectory=%h/Proyectos/ProjectOS
 Environment=NODE_ENV=production
 Environment=PORT=3000
-ExecStart=/usr/bin/node node_modules/next/dist/bin/next start
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1
 Restart=on-failure
 RestartSec=3
 
