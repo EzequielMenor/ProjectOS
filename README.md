@@ -35,6 +35,12 @@ Linear (rapidez, teclado, interfaz sobria) o de Plane (módulos, ciclos, documen
    Agente ── MCP / REST ─┘     (localhost)
 ```
 
+<div align="center">
+<img src="docs/img/agent-demo.gif" alt="Un agente mueve una tarea a En curso, anota un avance con su commit y la cierra; el tablero y la actividad del issue lo reflejan" width="900">
+
+<sub>Un agente toma una tarea, anota avances con su commit y la cierra. Demo con datos ficticios (la pantalla se recarga tras cada paso).</sub>
+</div>
+
 ## Qué puedes hacer
 
 | | |
