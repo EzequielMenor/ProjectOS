@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Gestor de proyectos local-first para trabajar con agentes de IA (API + MCP)",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
     "build": "next build",

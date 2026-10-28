@@ -22,13 +22,12 @@ Tú ves cómo va; el agente hace el 90 % del trabajo de mantenerlo al día.
 
 ## ¿Qué es?
 
-ProjectOS reúne lo mejor de Linear (rapidez, teclado, interfaz sobria) y de Plane (módulos, ciclos, documentos, propiedades
-propias) en una aplicación que **corre en tu ordenador**. No hay cuentas, suscripciones, límites ni nube: tus datos están en una
-carpeta tuya.
+ProjectOS es un gestor de proyectos **pensado desde el principio para agentes de IA** (Claude Code y cualquier cliente MCP).
+Un agente puede leer qué toca hacer, cambiar el estado de una tarea, anotar avances con pruebas (commits, PR) y cerrar lo que
+está terminado, todo por una API con permisos y sin herramientas de borrado. Tú abres la interfaz cuando quieres ver el estado.
 
-Su rasgo principal es que **está pensado para agentes de IA** (Claude Code y cualquier cliente MCP). Un agente puede leer qué
-toca hacer, cambiar el estado de una tarea, anotar avances con pruebas (commits, PR) y cerrar lo que está terminado, todo por
-una API con permisos. Tú abres la interfaz cuando quieres ver el estado.
+Corre en **tu ordenador**: sin cuentas, suscripciones, límites ni nube. Tus datos están en una carpeta tuya. Y si vienes de
+Linear (rapidez, teclado, interfaz sobria) o de Plane (módulos, ciclos, documentos, propiedades propias), encontrarás lo mismo.
 
 ```
    Tú ──── navegador ────┐
@@ -138,7 +137,11 @@ un Claude Code real completando un ciclo de trabajo, y el servidor de producció
 con agentes reales. Tampoco hay edición de ciclos, módulos e hitos desde la interfaz (solo los agentes pueden editarlos).
 
 Es una aplicación de **una sola persona**: no hay cuentas ni permisos por usuario; los «miembros» son etiquetas para repartir
-trabajo. Sin licencia publicada de momento: todos los derechos reservados.
+trabajo.
+
+## Contribuir y licencia
+
+Código abierto bajo licencia [MIT](LICENSE). Los issues y las ideas son bienvenidos: mira [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Para desarrollar
 
