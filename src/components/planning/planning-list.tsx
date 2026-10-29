@@ -1,6 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowUpRight } from "lucide-react";
+import { planningHref } from "@/lib/planning-navigation";
 import { useState, useTransition } from "react";
 import { createPlanningAction } from "@/app/actions";
 import { Input } from "@/components/ui/input";
@@ -21,6 +24,7 @@ const fmt = (d: string | null) => (d ? new Intl.DateTimeFormat("es", { dateStyle
 
 export function PlanningList({ kind, projectId, items }: { kind: Kind; projectId: string; items: PlanItem[] }) {
   const router = useRouter();
+  const { project } = useParams<{ project: string }>();
   const copy = COPY[kind];
   const [name, setName] = useState("");
   const [from, setFrom] = useState("");
@@ -46,6 +50,7 @@ export function PlanningList({ kind, projectId, items }: { kind: Kind; projectId
   return (
     <div className="mx-auto h-full max-w-3xl overflow-y-auto px-6 py-8">
       <h1 className="text-lg font-semibold tracking-tight">{copy.title}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Abre un elemento para ver su objetivo, progreso y trabajo asociado.</p>
       <form onSubmit={submit} className="mt-4 flex flex-wrap items-end gap-2">
         <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs text-muted-foreground">
           Nombre
@@ -72,14 +77,17 @@ export function PlanningList({ kind, projectId, items }: { kind: Kind; projectId
       ) : (
         <ul className="mt-6 divide-y rounded-lg border">
           {items.map((it) => (
-            <li key={it.id} data-testid="plan-item" className="flex items-center gap-4 px-4 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{it.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {[it.status ? STATUS_LABEL[it.status] : null, fmt(it.from) && fmt(it.to) ? `${fmt(it.from)} → ${fmt(it.to)}` : fmt(it.to) ?? fmt(it.from)].filter(Boolean).join(" · ") || "Sin fechas"}
-                </p>
-              </div>
-              <ProgressBar progress={it.progress} />
+            <li key={it.id} data-testid="plan-item">
+              <Link href={planningHref(project, kind, it.id)} aria-label={it.name} className="flex flex-wrap items-center gap-4 rounded-lg px-4 py-4 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
+                <div className="min-w-0 flex-1 basis-48">
+                  <p className="flex items-center gap-2 text-sm font-medium"><span className="break-words">{it.name}</span><ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden /></p>
+                  {it.description ? <p className="mt-1 line-clamp-2 break-words text-xs text-muted-foreground">{it.description}</p> : null}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {[it.status ? STATUS_LABEL[it.status] : null, fmt(it.from) && fmt(it.to) ? `${fmt(it.from)} → ${fmt(it.to)}` : fmt(it.to) ?? fmt(it.from)].filter(Boolean).join(" · ") || "Sin fechas"}
+                  </p>
+                </div>
+                <ProgressBar progress={it.progress} />
+              </Link>
             </li>
           ))}
         </ul>
