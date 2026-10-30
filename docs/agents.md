@@ -8,13 +8,16 @@ cada agente recibe por MCP el «acuerdo de trabajo» (`MCP_INSTRUCTIONS` en `src
 
 > En la propia aplicación: al crear un token, **Tokens de API → «Configurar en el agente»** rellena con el token nuevo el
 > comando de Claude Code, el JSON para otros clientes MCP y un prompt para que el agente se configure él mismo (registra el
-> servidor, comprueba la conexión, vincula el repositorio a su proyecto, añade la sección al `CLAUDE.md` y se da de alta como miembro).
+> servidor en la configuración de usuario de su propio cliente: Claude Code, Codex, Pi u otro compatible). No configura
+> la aplicación ni modifica el repositorio actual. Comprueba la conexión con `list_projects` y, con un token `write`, se da
+> de alta como miembro. Si hace falta recargar el cliente, informa de que la comprobación queda pendiente.
+> Vincular un repositorio es un paso independiente: usa la sección de `CLAUDE.md` / `AGENTS.md` explicada más abajo.
 > Lo que sigue es lo mismo explicado a mano.
 
 1. Un token por agente (o por máquina): **Tokens de API** → nombre descriptivo (`claude-code-fichaje`) y permiso `write`.
    El nombre sale en la actividad como `agent:<nombre>`, así que distingue de quién es cada cambio. Usa `read` para un
    agente que solo debe consultar. El token se muestra una sola vez.
-2. Regístralo, para todos tus proyectos (`--scope user`) o solo para el repo actual (por defecto):
+2. Regístralo en tu cliente, para todos tus proyectos (`--scope user`), sin guardar el token en el repositorio:
 
    ```bash
    claude mcp add --transport http --scope user projectos http://localhost:3000/api/mcp \

@@ -80,7 +80,7 @@ export function AgentSetup({ token, scope }: { token: string | null; scope: "rea
         {tab === "prompt" ? (
           <>
             <p className="text-sm text-muted-foreground">
-              Pégalo en una sesión del agente, dentro del repositorio que quieras conectar: lo registra, comprueba la conexión, vincula el repositorio a su proyecto y se da de alta como miembro.
+              Pégalo en una sesión de Claude Code, Codex, Pi u otro agente para que configure su propia conexión MCP de usuario. No modifica el repositorio actual. Comprueba la conexión y, con permiso de escritura, se da de alta como miembro.
             </p>
             <Block label="Prompt para el agente" text={agentPrompt(input)} />
           </>
