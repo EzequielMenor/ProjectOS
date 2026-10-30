@@ -26,7 +26,9 @@ y una letra: `l` Lista, `b` Kanban, `t` Tabla, `e` Épicas, `c` Ciclos, `m` Mód
   archivadas no cuentan). Se crea desde la página o cambiando el campo *Tipo* de cualquier issue.
 - **Ciclos**: sprints con fechas; un issue pertenece como máximo a uno.
 - **Módulos**: agrupan issues por funcionalidad o fase (un issue puede estar en varios).
-- **Hitos** y **Roadmap**: hitos con fecha objetivo y su progreso.
+- **Hitos**: metas con fecha objetivo opcional. Abre un hito para consultar su objetivo, progreso, épicas y tickets asignados; desde cada elemento puedes entrar a su ficha y ver los bloqueadores pendientes.
+- **Roadmap**: cronograma navegable de hitos, módulos y ciclos con fechas, y tarjetas con objetivo y progreso para los que todavía no tienen fecha. Todos abren su detalle; no necesitas un documento aparte para recorrer el plan.
+- **Detalle de planificación**: disponible también desde las listas de ciclos y módulos. Incluye enlaces de vuelta a Roadmap y a la lista correspondiente. El progreso conserva el criterio existente: cuenta los elementos asignados (incluidas las épicas), excluye los archivados y no incluye cancelados en el porcentaje. Los bloqueos se muestran con el mismo criterio que `next_work`; esta vista no añade todavía el bloqueo obligatorio de cambios de estado.
 
 ## Documentos
 

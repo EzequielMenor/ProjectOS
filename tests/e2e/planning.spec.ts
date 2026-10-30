@@ -40,5 +40,12 @@ test("ciclos, módulos, hitos y roadmap con asignación desde el detalle", async
   await expect(page.getByTestId("plan-item").first().getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
   await page.goto("/PLAN/roadmap");
   await expect(page.getByTestId("roadmap-row")).toHaveCount(3);
-  await expect(page.getByRole("img", { name: "Cronograma" })).toContainText("Sprint 1");
+  await expect(page.getByRole("region", { name: "Cronograma" })).toContainText("Sprint 1");
+  for (const name of ["Sprint 1", "A · Base", "v1.0"]) {
+    await page.getByRole("link", { name, exact: true }).click();
+    await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+    await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
+    await expect(page.getByRole("region", { name: "Tickets" }).getByRole("link", { name: /Tarea planificada/ })).toBeVisible();
+    await page.getByRole("navigation", { name: "Ruta de planificación" }).getByRole("link", { name: "Roadmap" }).click();
+  }
 });

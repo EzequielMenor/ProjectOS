@@ -31,7 +31,9 @@ commits y PRs, y registra los commits como evidencia con \`log_progress\` / \`co
 export function agentPrompt(i: Input) {
   const { url, token, scope } = norm(i);
   const write = scope === "write";
-  return `Configura ProjectOS (nuestro gestor de proyectos) como servidor MCP en este entorno y deja este repositorio conectado a él.
+  return `Configúrate a ti mismo, el agente que está leyendo este mensaje (Claude Code, Codex, Pi u otro cliente), para usar ProjectOS como servidor MCP. La configuración es para tu propio cliente, no para la aplicación ni para el proyecto del directorio actual.
+
+No modifiques el repositorio actual: no implementes un servidor MCP, no instales dependencias del proyecto ni edites CLAUDE.md, AGENTS.md o archivos de configuración locales del repo. Vincular un repositorio a un proyecto de ProjectOS es una tarea separada y no forma parte de este pedido.
 
 Datos de conexión
 - Servidor MCP (HTTP): ${url}
@@ -40,17 +42,13 @@ Datos de conexión
 - Nombre con el que registrarlo: ${MCP_SERVER_NAME}
 
 Pasos
-1. Registra el servidor en el ámbito de usuario, no en el del repositorio, para que el token no acabe en git:
+1. Identifica qué cliente eres y registra el servidor en la configuración de usuario de tu propio cliente, no en la del repositorio. Conserva los otros servidores ya configurados. Si eres Claude Code, ejecuta:
 
    ${claudeCodeCommand(i).replace(/\n/g, "\n   ")}
 
-   Si no eres Claude Code, añade el equivalente en la configuración MCP de tu cliente (tipo http, la URL de arriba y la cabecera Authorization).
-2. Comprueba la conexión llamando a \`list_projects\` y cuéntame qué proyectos ves. Si falla con un error de autenticación, detente y avísame: no pruebes con otros tokens.
-3. Averigua a qué proyecto de ProjectOS corresponde este repositorio (por el nombre del repo y \`list_projects\`). Si dudas entre varios, pregúntame.
-4. Añade la siguiente sección al CLAUDE.md de este repositorio (o a AGENTS.md si es el que usa; créalo si no existe), sustituyendo CLAVE por el identificador del proyecto. No dupliques la sección si ya existe:
-
-${REPO_SNIPPET.split("\n").map((l) => `   ${l}`).join("\n")}
-${write ? `5. Regístrate como miembro con \`create_member\` (name: tu nombre, por ejemplo el de tu herramienta; kind: agent) para que se te puedan asignar issues. Si ya existe un miembro con ese nombre, no lo repitas.
-6.` : "5."} Por seguridad, no escribas el token en ningún fichero del repositorio ni lo incluyas en commits, issues ni comentarios.
-${write ? "7." : "6."} Al terminar, dime qué has configurado, a qué proyecto has vinculado el repositorio y el resultado de \`list_projects\`.`;
+   Si eres Codex, Pi u otro cliente, usa el mecanismo MCP compatible con ese cliente y su formato de configuración de usuario (HTTP, la URL de arriba y la cabecera Authorization). No ejecutes el comando de Claude Code si no eres Claude Code. Si no puedes identificar o modificar tu configuración, detente y explica qué dato o permiso falta; no inventes rutas ni uses el repositorio como alternativa.
+2. Si necesitas reiniciar o recargar el cliente para cargar el servidor, indícamelo y deja la comprobación pendiente; no afirmes que la conexión funciona sin haberla comprobado. Cuando las herramientas estén disponibles, comprueba la conexión llamando a \`list_projects\` y cuéntame qué proyectos ves. Si falla con un error de autenticación, detente y avísame: no pruebes con otros tokens.
+${write ? `3. Regístrate como miembro con \`create_member\` (name: tu nombre, por ejemplo el de tu herramienta; kind: agent) para que se te puedan asignar issues. Si ya existe un miembro con ese nombre, no lo repitas.
+4.` : "3."} Por seguridad, no escribas el token en ningún fichero del repositorio ni lo incluyas en commits, issues ni comentarios.
+${write ? "5." : "4."} Al terminar, dime qué cliente has configurado, en qué ámbito, y el resultado de \`list_projects\` o qué comprobación queda pendiente. No muestres el token en el resumen.`;
 }
