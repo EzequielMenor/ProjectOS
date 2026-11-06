@@ -17,10 +17,20 @@ Todo lo que se puede hacer desde la interfaz. Para agentes, ver [`agents.md`](ag
 
 ## Cartera de proyectos
 
-`/projects` («Todos los proyectos» en la barra lateral, siempre visible) lista los proyectos en una sola pantalla. Cada fila muestra
+`/projects` («Todos los proyectos» en la barra lateral, siempre visible) reúne los proyectos en tarjetas. Cada tarjeta muestra
 el nombre (enlace a su lista de issues), el identificador, el objetivo (la descripción del proyecto), una insignia «Archivado» si
-procede y un selector de **estado**. Cambiar el estado desde la fila (o desde `/<PROY>/settings`, sección «Ciclo de vida») se guarda
+procede y un selector de **estado**. Cambiar el estado desde la tarjeta (o desde `/<PROY>/settings`, sección «Ciclo de vida») se guarda
 al elegirlo.
+
+Las tarjetas muestran el progreso de tareas completadas sobre el total, las tareas en marcha, la fecha y hora exactas de la última
+actividad registrada (UTC) y un enlace al siguiente trabajo disponible. El progreso cuenta issues de tipo tarea, incluidas las subtareas;
+excluye épicas, tareas archivadas y canceladas. Un proyecto sin tareas muestra «Sin tareas», no un porcentaje. El siguiente paso prioriza
+las tareas en marcha y después las pendientes sin bloqueadores abiertos; si no hay ninguna disponible se indica sin inventar una acción.
+Estos datos no cambian el estado del proyecto automáticamente.
+
+Los accesos **En seguimiento**, **En marcha**, **Todos**, **Pausados**, **Planificados**, **Terminados**, **Cancelados** y **Archivados**
+muestran recuentos globales, independientes de la búsqueda. Al seleccionarlos conservan el texto buscado y sustituyen los filtros de estado
+y visibilidad: las vistas por estado incluyen proyectos sin archivar, mientras «Todos» incluye también archivados y «Archivados» solo ellos.
 
 | Control | Valores | Por defecto |
 |---------|---------|-------------|

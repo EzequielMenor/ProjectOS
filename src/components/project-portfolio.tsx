@@ -1,25 +1,36 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { ProjectLifecycleControl } from "@/components/project-lifecycle-control";
-import { LIFECYCLE_FILTERS, VISIBILITY_FILTERS, isDefaultPortfolioQuery, type PortfolioQuery } from "@/lib/project-status";
-import type { ProjectStatus } from "@/db/schema";
-
-export type PortfolioProjectRow = {
-  id: string;
-  identifier: string;
-  name: string;
-  description: string;
-  color: string;
-  status: ProjectStatus | null;
-  archived: boolean;
-};
+import { filterProjects, LIFECYCLE_FILTERS, VISIBILITY_FILTERS, isDefaultPortfolioQuery, type PortfolioQuery } from "@/lib/project-status";
+import type { DashboardProject } from "@/server/services/project-dashboard";
 
 const fieldClass =
   "h-8 w-full min-w-0 rounded-md border bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 const linkClass = "rounded text-sm underline underline-offset-2 outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50";
 
-/** `projects` is already filtered; `total` counts every project, archived included. */
-export function ProjectPortfolio({ projects, total, query }: { projects: PortfolioProjectRow[]; total: number; query: PortfolioQuery }) {
+const shortcuts: { label: string; status: PortfolioQuery["status"]; view: PortfolioQuery["view"] }[] = [
+  { label: "En seguimiento", status: "all", view: "tracked" },
+  { label: "En marcha", status: "active", view: "tracked" },
+  { label: "Todos", status: "all", view: "all" },
+  { label: "Pausados", status: "paused", view: "tracked" },
+  { label: "Planificados", status: "planned", view: "tracked" },
+  { label: "Terminados", status: "completed", view: "tracked" },
+  { label: "Cancelados", status: "cancelled", view: "tracked" },
+  { label: "Archivados", status: "all", view: "archived" },
+];
+
+function shortcutHref(query: PortfolioQuery, shortcut: (typeof shortcuts)[number]) {
+  const params = new URLSearchParams();
+  if (query.q) params.set("q", query.q);
+  if (shortcut.status !== "all") params.set("status", shortcut.status);
+  if (shortcut.view !== "tracked") params.set("view", shortcut.view);
+  const search = params.toString();
+  return `/projects${search ? `?${search}` : ""}`;
+}
+
+/** `projects` is filtered; shortcut counts always use the complete portfolio. */
+export function ProjectPortfolio({ projects, allProjects, query }: { projects: DashboardProject[]; allProjects: DashboardProject[]; query: PortfolioQuery }) {
+  const total = allProjects.length;
   return (
     <div className="mx-auto h-full max-w-4xl overflow-y-auto px-4 py-8 sm:px-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -39,6 +50,19 @@ export function ProjectPortfolio({ projects, total, query }: { projects: Portfol
         </p>
       ) : (
         <>
+          <nav aria-label="Vistas de proyectos" className="mt-6 flex flex-wrap gap-2">
+            {shortcuts.map((shortcut) => {
+              const count = filterProjects(allProjects, { q: "", status: shortcut.status, view: shortcut.view }).length;
+              const current = query.status === shortcut.status && query.view === shortcut.view;
+              return (
+                <Link key={shortcut.label} href={shortcutHref(query, shortcut)} aria-current={current ? "page" : undefined}
+                  className={`rounded-md border px-3 py-1.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${current ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}>
+                  {shortcut.label} <span className="ml-1">{count}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <p className="mt-2 text-xs text-muted-foreground">Recuento global de proyectos; los accesos conservan la búsqueda y sustituyen los filtros de estado y visibilidad.</p>
           <form method="get" action="/projects" role="search" aria-label="Buscar y filtrar proyectos" className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
             <label className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground">
               Buscar
@@ -80,19 +104,28 @@ export function ProjectPortfolio({ projects, total, query }: { projects: Portfol
               Ningún proyecto coincide con estos filtros. <Link href="/projects" className={linkClass}>Limpiar filtros</Link>
             </p>
           ) : (
-            <ul aria-label="Proyectos" className="mt-6 divide-y rounded-lg border">
+            <ul aria-label="Proyectos" className="mt-6 grid gap-3 sm:grid-cols-2">
               {projects.map((p) => (
-                <li key={p.id} data-testid="project-row" className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-start sm:gap-4">
-                  <span className="mt-1.5 hidden size-2.5 shrink-0 rounded-sm sm:block" style={{ background: p.color }} aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <Link href={`/${p.identifier}/list`} className="min-w-0 break-words rounded text-sm font-medium outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">
-                        {p.name}
-                      </Link>
-                      <span className="font-mono text-xs text-muted-foreground">{p.identifier}</span>
-                      {p.archived ? <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Archivado</span> : null}
+                <li key={p.id} data-testid="project-row" className="flex min-w-0 flex-col gap-4 rounded-lg border bg-card p-4 text-card-foreground">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="mt-1.5 size-2.5 shrink-0 rounded-sm" style={{ background: p.color }} aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <Link href={`/${p.identifier}/list`} className="min-w-0 break-words rounded text-sm font-medium outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50">{p.name}</Link>
+                        <span className="font-mono text-xs text-muted-foreground">{p.identifier}</span>
+                        {p.archived ? <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Archivado</span> : null}
+                      </div>
+                      <p className="mt-1 break-words text-sm text-muted-foreground">{p.description.trim() || "Sin objetivo definido."}</p>
                     </div>
-                    <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">{p.description.trim() || "Sin objetivo definido."}</p>
+                  </div>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between gap-2"><span>Progreso</span><span>{p.percent === null ? "Sin tareas" : `${p.completed} de ${p.total} · ${p.percent}%`}</span></div>
+                    {p.percent !== null ? <div role="progressbar" aria-label={`Progreso de ${p.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={p.percent} aria-valuetext={`${p.completed} de ${p.total} tareas completadas`} className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${p.percent}%` }} /></div> : null}
+                    <p className="text-xs text-muted-foreground">{p.started} en marcha</p>
+                  </div>
+                  <div className="space-y-1 break-words text-sm text-muted-foreground">
+                    <p>Última actividad: {p.lastActivityAt ? <time dateTime={p.lastActivityAt.toISOString()}>{new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "medium", timeZone: "UTC" }).format(p.lastActivityAt)} UTC</time> : "Sin actividad registrada"}</p>
+                    <p>Próximo paso: {p.nextIssue ? <Link href={`/${p.identifier}/issues/${p.nextIssue.seq}`} className={linkClass}>{p.identifier}-{p.nextIssue.seq} · {p.nextIssue.title}</Link> : "Sin trabajo pendiente disponible"}</p>
                   </div>
                   <ProjectLifecycleControl key={`${p.id}:${p.status}`} projectId={p.id} projectName={p.name} status={p.status} />
                 </li>
