@@ -54,6 +54,7 @@ export async function createProject(raw: unknown, actor = "user") {
         name: input.name,
         description: input.description ?? "",
         color: input.color,
+        status: "planned",
       })
       .returning();
     await tx.insert(state).values(

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ISSUE_TYPES, LINK_KINDS, PRIORITIES, RELATION_TYPES } from "@/db/schema";
+import { ISSUE_TYPES, LINK_KINDS, PRIORITIES, PROJECT_STATUSES, RELATION_TYPES } from "@/db/schema";
 
 export const identifierSchema = z
   .string()
@@ -24,6 +24,8 @@ export const updateProjectInput = z.object({
   name: z.string().trim().min(1).max(100).optional(),
   description: z.string().max(20_000).optional(),
   color: colorSchema.optional(),
+  /** null clears the lifecycle back to unclassified. */
+  status: z.enum(PROJECT_STATUSES).nullable().optional(),
 });
 
 export const createIssueInput = z.object({
