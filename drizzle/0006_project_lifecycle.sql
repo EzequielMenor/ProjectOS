@@ -1,0 +1,2 @@
+ALTER TABLE "project" ADD COLUMN "status" text;--> statement-breakpoint
+ALTER TABLE "project" ADD CONSTRAINT "project_status_check" CHECK ("project"."status" IN ('planned', 'active', 'paused', 'completed', 'cancelled'));
