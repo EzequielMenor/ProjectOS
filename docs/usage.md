@@ -15,6 +15,14 @@ Todo lo que se puede hacer desde la interfaz. Para agentes, ver [`agents.md`](ag
 - **Vistas guardadas**: «Vistas» en la barra de filtros guarda los filtros actuales con su layout. Cada vista aparece bajo el
   proyecto en la barra lateral y en la paleta.
 
+## Estado del proyecto
+
+Desde los ajustes del proyecto, la sección «Ciclo de vida» permite elegir **Planificado**, **En marcha**, **Pausado**, **Terminado**,
+**Cancelado** o **Sin clasificar**. El cambio se guarda al elegirlo y no modifica el nombre, la descripción ni los issues.
+El archivado es independiente del estado del proyecto: archivar y desarchivar conserva ese estado.
+Los proyectos nuevos empiezan como **Planificado**; los que ya existían quedan **Sin clasificar** hasta que elijas un estado.
+Cerrar todos los issues no cambia el estado del proyecto automáticamente. Se puede volver a «Sin clasificar» en cualquier momento.
+
 ## Paleta de comandos y atajos
 
 `Ctrl K` (o `/`) abre la paleta: buscar issues y páginas, ir a cualquier pantalla, cambiar de tema o de tamaño. Saltos con `g`
