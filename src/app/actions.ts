@@ -14,6 +14,7 @@ import { createPropertyDef, deletePropertyDef, updatePropertyDef } from "@/serve
 import { createState, deleteState, moveState, setDefaultState, updateState } from "@/server/services/states";
 import { createToken, revokeToken } from "@/server/services/tokens";
 import { assignIssue, createCycle, createMilestone, createModule } from "@/server/services/planning";
+import { resetDemoData } from "@/server/services/demo";
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -239,4 +240,10 @@ export async function renameMemberAction(id: string, input: unknown) {
 }
 export async function deleteMemberAction(id: string) {
   return run(async () => deleteMember(id));
+}
+
+export async function resetDemoAction() {
+  return run(async () => {
+    await resetDemoData();
+  });
 }

@@ -14,10 +14,12 @@ import {
 } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ProjectLifecycleControl } from "@/components/project-lifecycle-control";
 import { PropertySettings, type PropertyRow } from "@/components/property-settings";
-import type { StateGroup } from "@/db/schema";
+import type { ProjectStatus, StateGroup } from "@/db/schema";
 
-type Project = { id: string; identifier: string; name: string; description: string; color: string };
+/** `status` is the project's lifecycle (null = unclassified). */
+type Project = { id: string; identifier: string; name: string; description: string; color: string; status: ProjectStatus | null };
 type StateRow = { id: string; name: string; group: StateGroup; color: string; isDefault: boolean; issues: number };
 
 const GROUPS: { value: StateGroup; label: string }[] = [
@@ -44,6 +46,7 @@ export function ProjectSettings({ project, states, properties }: { project: Proj
     <div className="mx-auto h-full max-w-3xl overflow-y-auto px-6 py-8">
       <h1 className="text-lg font-semibold tracking-tight">Ajustes de {project.name}</h1>
       <General project={project} run={run} />
+      <Lifecycle project={project} />
       <States projectId={project.id} states={states} run={run} />
       <PropertySettings projectId={project.id} properties={properties} run={run} />
     </div>
@@ -79,6 +82,20 @@ function General({ project, run }: { project: Project; run: Run }) {
         </button>
       </div>
     </form>
+  );
+}
+
+function Lifecycle({ project }: { project: Project }) {
+  return (
+    <section aria-label="Ciclo de vida del proyecto" className="mt-8">
+      <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ciclo de vida</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Dónde está el proyecto: planificado, en marcha, pausado, terminado o cancelado. Se guarda al elegirlo, es independiente del archivado y de los estados de los issues, y no cambia ningún issue.
+      </p>
+      <div className="mt-3">
+        <ProjectLifecycleControl key={`${project.id}:${project.status}`} projectId={project.id} projectName={project.name} status={project.status} />
+      </div>
+    </section>
   );
 }
 

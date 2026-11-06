@@ -1,3 +1,4 @@
+import { isDemoMode } from "@/db/client";
 import { errorMessage } from "@/server/agent/mcp";
 import { ServiceError } from "@/server/errors";
 import { createBackup, restoreBackup, saveBackupToDisk } from "@/server/services/backup";
@@ -24,6 +25,12 @@ function assertSameOrigin(req: Request) {
 /** `?action=save` writes a copy on the server; otherwise restores the uploaded JSON (`?mode=dry` simulates, `?replace=1` overwrites). */
 export async function POST(req: Request) {
   try {
+    if (isDemoMode()) {
+      throw new ServiceError(
+        "forbidden",
+        "En la demo interactiva no se guardan ni restauran copias en el servidor. Usa «Descargar copia» o «Reiniciar datos».",
+      );
+    }
     assertSameOrigin(req);
     const url = new URL(req.url);
     if (url.searchParams.get("action") === "save") return Response.json(await saveBackupToDisk());

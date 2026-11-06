@@ -5,7 +5,7 @@ import { useParams, usePathname, useSearchParams } from "next/navigation";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useTheme } from "next-themes";
 import { useState } from "react";
-import { Bookmark, Boxes, CalendarRange, Columns3, DatabaseBackup, FileText, Flag, GanttChart, KeyRound, Layers, LayoutList, Menu, Moon, Plus, Search, Settings, Sun, Table2, Users, X } from "lucide-react";
+import { Bookmark, Boxes, CalendarRange, Cloud, Columns3, DatabaseBackup, FileText, Flag, FolderKanban, GanttChart, KeyRound, Layers, LayoutList, Menu, Moon, Plus, Search, Settings, Sun, Table2, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OPEN_PALETTE, PaletteButton } from "@/components/command-palette";
 import { TextSizeControl } from "@/components/text-size-control";
@@ -13,7 +13,7 @@ import { TextSizeControl } from "@/components/text-size-control";
 type P = { id: string; identifier: string; name: string; color: string };
 
 export type SidebarView = { id: string; projectId: string; name: string; layout: "list" | "board" | "table"; query: string };
-type SidebarProps = { projects: P[]; views: SidebarView[]; uiSize: number };
+type SidebarProps = { projects: P[]; views: SidebarView[]; uiSize: number; demo?: boolean };
 
 /** Desktop: fixed sidebar. Narrow screens: a top bar whose menu button opens the same navigation as a drawer. */
 export function Sidebar(props: SidebarProps) {
@@ -64,7 +64,7 @@ function MobileBar(props: SidebarProps) {
   );
 }
 
-function SidebarBody({ projects, views, uiSize }: SidebarProps) {
+function SidebarBody({ projects, views, uiSize, demo }: SidebarProps) {
   const pathname = usePathname();
   const search = useSearchParams().toString();
   const params = useParams<{ project?: string }>();
@@ -87,6 +87,7 @@ function SidebarBody({ projects, views, uiSize }: SidebarProps) {
       </div>
       <PaletteButton />
       <nav className="flex-1 overflow-y-auto px-2 py-2">
+        <SubLink href="/projects" icon={<FolderKanban className="size-3.5" />} label="Todos los proyectos" active={pathname === "/projects"} />
         <div className="mb-1 flex items-center px-2 text-[0.8125rem] font-medium uppercase tracking-wide text-muted-foreground">
           Proyectos
           <Link href="/projects/new" aria-label="Nuevo proyecto" className="ml-auto rounded p-0.5 hover:bg-sidebar-accent hover:text-foreground">
@@ -143,6 +144,9 @@ function SidebarBody({ projects, views, uiSize }: SidebarProps) {
         })}
       </nav>
       <div className="border-t p-2">
+        {demo ? (
+          <SubLink href="/welcome" icon={<Cloud className="size-3.5 text-indigo-500" />} label="Instalar / Plan Cloud" active={pathname.startsWith("/welcome")} />
+        ) : null}
         <SubLink href="/settings/members" icon={<Users className="size-3.5" />} label="Miembros" active={pathname.startsWith("/settings/members")} />
         <SubLink href="/settings/tokens" icon={<KeyRound className="size-3.5" />} label="Tokens de API" active={pathname.startsWith("/settings/tokens")} />
         <SubLink href="/settings/backup" icon={<DatabaseBackup className="size-3.5" />} label="Copias de seguridad" active={pathname.startsWith("/settings/backup")} />

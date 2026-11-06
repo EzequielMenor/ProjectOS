@@ -11,24 +11,43 @@ export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 const MIGRATIONS = path.join(process.cwd(), "drizzle");
 
+/** True when running as the public interactive sandbox (e.g., DEMO_MODE=1 or free Vercel deployment without DATABASE_URL). */
+export function isDemoMode(): boolean {
+  const flag = process.env.DEMO_MODE?.toLowerCase();
+  if (flag === "1" || flag === "true") return true;
+  if (flag === "0" || flag === "false") return false;
+  return process.env.VERCEL === "1" && !process.env.DATABASE_URL;
+}
+
 type Handle = { db: Db; driver: "postgres" | "pglite"; close: () => Promise<void> };
 
 async function open(): Promise<Handle> {
+  const demo = isDemoMode();
   const url = process.env.DATABASE_URL;
   if (url) {
     const { Pool } = await import("pg");
     const pool = new Pool({ connectionString: url });
     const db = drizzlePg(pool, { schema });
     await migratePg(db, { migrationsFolder: MIGRATIONS });
-    return { db: db as unknown as Db, driver: "postgres", close: () => pool.end() };
+    const typedDb = db as unknown as Db;
+    if (demo) {
+      const { seedDemoData } = await import("@/server/services/demo");
+      await seedDemoData(typedDb);
+    }
+    return { db: typedDb, driver: "postgres", close: () => pool.end() };
   }
   const { PGlite } = await import("@electric-sql/pglite");
-  const dir = process.env.PGLITE_DIR ?? path.join(process.cwd(), "data", "pg");
+  const dir = process.env.PGLITE_DIR ?? (demo ? "memory://" : path.join(process.cwd(), "data", "pg"));
   const client = new PGlite(dir);
   await client.waitReady;
   const db = drizzlePglite(client, { schema });
   await migratePglite(db, { migrationsFolder: MIGRATIONS });
-  return { db: db as unknown as Db, driver: "pglite", close: () => client.close() };
+  const typedDb = db as unknown as Db;
+  if (demo) {
+    const { seedDemoData } = await import("@/server/services/demo");
+    await seedDemoData(typedDb);
+  }
+  return { db: typedDb, driver: "pglite", close: () => client.close() };
 }
 
 const g = globalThis as unknown as { __projectosDb?: Promise<Handle> };

@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     "data/**",
     "test-results/**",
     "playwright-report/**",
+    ".worktrees/**",
   ]),
   { files: ["tests/**"], rules: { "@typescript-eslint/no-explicit-any": "off" } },
 ]);

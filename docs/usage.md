@@ -15,6 +15,47 @@ Todo lo que se puede hacer desde la interfaz. Para agentes, ver [`agents.md`](ag
 - **Vistas guardadas**: «Vistas» en la barra de filtros guarda los filtros actuales con su layout. Cada vista aparece bajo el
   proyecto en la barra lateral y en la paleta.
 
+## Cartera de proyectos
+
+`/projects` («Todos los proyectos» en la barra lateral, siempre visible) reúne los proyectos en tarjetas. Cada tarjeta muestra
+el nombre (enlace a su lista de issues), el identificador, el objetivo (la descripción del proyecto), una insignia «Archivado» si
+procede y un selector de **estado**. Cambiar el estado desde la tarjeta (o desde `/<PROY>/settings`, sección «Ciclo de vida») se guarda
+al elegirlo.
+
+Las tarjetas muestran el progreso de tareas completadas sobre el total, las tareas en marcha, la fecha y hora exactas de la última
+actividad registrada (UTC) y un enlace al siguiente trabajo disponible. El progreso cuenta issues de tipo tarea, incluidas las subtareas;
+excluye épicas, tareas archivadas y canceladas. Un proyecto sin tareas muestra «Sin tareas», no un porcentaje. El siguiente paso prioriza
+las tareas en marcha y después las pendientes sin bloqueadores abiertos; si no hay ninguna disponible se indica sin inventar una acción.
+Estos datos no cambian el estado del proyecto automáticamente.
+
+Los accesos **En seguimiento**, **En marcha**, **Todos**, **Pausados**, **Planificados**, **Terminados**, **Cancelados** y **Archivados**
+muestran recuentos globales, independientes de la búsqueda. Al seleccionarlos conservan el texto buscado y sustituyen los filtros de estado
+y visibilidad: las vistas por estado incluyen proyectos sin archivar, mientras «Todos» incluye también archivados y «Archivados» solo ellos.
+
+| Control | Valores | Por defecto |
+|---------|---------|-------------|
+| Buscar | Nombre, identificador u objetivo; sin distinguir mayúsculas ni acentos, todas las palabras deben aparecer | vacío |
+| Estado | Planificado, En marcha, Pausado, Terminado, Cancelado, Sin clasificar o cualquiera | Cualquier estado |
+| Mostrar | En seguimiento, Todos (con archivados), Archivados | En seguimiento |
+
+- **En seguimiento** muestra los proyectos sin archivar y, mientras no elijas un estado, oculta los *Terminados* y *Cancelados*. Para verlos,
+  elige ese estado en el filtro.
+- **Todos (con archivados)** incluye también los archivados; **Archivados** muestra solo esos. Archivar es independiente del estado:
+  un proyecto archivado conserva el suyo.
+- Los filtros viajan en la URL (`/projects?q=…&status=…&view=…`), así que se pueden guardar o compartir. Si un parámetro se repite,
+  se usa su primer valor; si el estado o la visibilidad no son válidos, se usa su valor por defecto.
+- Sin proyectos se invita a crear el primero; si los filtros no encuentran nada, «Limpiar filtros» vuelve a la vista por defecto.
+
+### Estado del proyecto frente al de los issues
+
+El estado del proyecto (dónde está en su vida) es independiente de los estados de sus issues (Todo, In Progress, Done…): cambiarlo no
+mueve, cierra ni edita ningún issue, y cerrar todos los issues no cambia el proyecto. Los proyectos nuevos empiezan como **Planificado**.
+Los que ya existían antes de esta función quedan **Sin clasificar** hasta que elijas un estado; nada los clasifica automáticamente y
+siguen apareciendo en «En seguimiento». Se puede volver a «Sin clasificar» en cualquier momento. Por ahora no hay archivado desde la
+interfaz.
+
+> Los cambios solo se ven en una instalación en producción tras reconstruirla y reiniciarla (`pnpm build` y reiniciar el servicio).
+
 ## Paleta de comandos y atajos
 
 `Ctrl K` (o `/`) abre la paleta: buscar issues y páginas, ir a cualquier pantalla, cambiar de tema o de tamaño. Saltos con `g`
@@ -50,7 +91,7 @@ en uso no se puede quitar. Borrar una propiedad elimina sus valores (solo recupe
 
 ## Ajustes del proyecto
 
-`/<PROY>/settings`: nombre, color y descripción (Markdown) y los **estados** del flujo: crear, renombrar, recolorear, reordenar,
+`/<PROY>/settings`: nombre, color y descripción (Markdown), el **estado del proyecto** (ver «Cartera de proyectos») y los **estados** del flujo: crear, renombrar, recolorear, reordenar,
 cambiar el estado por defecto y borrar. Un proyecto siempre conserva un estado de tipo «completed» y uno por defecto; al
 borrar un estado hay que elegir a cuál se mueven sus issues.
 

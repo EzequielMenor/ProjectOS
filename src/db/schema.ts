@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   doublePrecision,
   index,
   integer,
@@ -15,6 +16,10 @@ import {
 
 export const STATE_GROUPS = ["backlog", "unstarted", "started", "completed", "cancelled"] as const;
 export type StateGroup = (typeof STATE_GROUPS)[number];
+
+/** Project lifecycle; a null status means unclassified (every project that existed before it was introduced). */
+export const PROJECT_STATUSES = ["planned", "active", "paused", "completed", "cancelled"] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 export const PRIORITIES = ["none", "urgent", "high", "medium", "low"] as const;
 export type Priority = (typeof PRIORITIES)[number];
@@ -77,11 +82,15 @@ export const project = pgTable(
     description: text("description").notNull().default(""),
     color: text("color").notNull().default("#6366f1"),
     issueCounter: integer("issue_counter").notNull().default(0),
+    status: text("status", { enum: PROJECT_STATUSES }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [unique("project_workspace_identifier").on(t.workspaceId, t.identifier)],
+  (t) => [
+    unique("project_workspace_identifier").on(t.workspaceId, t.identifier),
+    check("project_status_check", sql`${t.status} IN (${sql.raw(PROJECT_STATUSES.map((v) => `'${v}'`).join(", "))})`),
+  ],
 );
 
 export const state = pgTable(

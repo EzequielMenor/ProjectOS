@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
+    "dev:demo": "DEMO_MODE=1 PGLITE_DIR=memory:// next dev -H 127.0.0.1",
     "build": "next build",
     "start": "next start -H 127.0.0.1",
     "lint": "eslint",
