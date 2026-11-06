@@ -5,6 +5,7 @@ import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "./schema";
+import { bundledMigrationQueries } from "./bundled-migrations";
 
 export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
@@ -28,7 +29,12 @@ async function open(): Promise<Handle> {
     const { Pool } = await import("pg");
     const pool = new Pool({ connectionString: url });
     const db = drizzlePg(pool, { schema });
-    await migratePg(db, { migrationsFolder: MIGRATIONS });
+    try {
+      await migratePg(db, { migrationsFolder: MIGRATIONS });
+    } catch {
+      const internal = db as unknown as { dialect: { migrate: (q: unknown, s: unknown, c: unknown) => Promise<void> }; session: unknown };
+      await internal.dialect.migrate(bundledMigrationQueries, internal.session, {});
+    }
     const typedDb = db as unknown as Db;
     if (demo) {
       const { seedDemoData } = await import("@/server/services/demo");
@@ -41,7 +47,15 @@ async function open(): Promise<Handle> {
   const client = new PGlite(dir);
   await client.waitReady;
   const db = drizzlePglite(client, { schema });
-  await migratePglite(db, { migrationsFolder: MIGRATIONS });
+  // In serverless / Vercel bundles, files on disk in `./drizzle` might not exist at runtime.
+  // We try migratePglite and fall back to bundled migrations in memory.
+  try {
+    await migratePglite(db, { migrationsFolder: MIGRATIONS });
+  } catch (err) {
+    console.warn("[projectos] Usando migraciones empaquetadas en memoria para PGlite:", err instanceof Error ? err.message : err);
+    const internal = db as unknown as { dialect: { migrate: (q: unknown, s: unknown, c: unknown) => Promise<void> }; session: unknown };
+    await internal.dialect.migrate(bundledMigrationQueries, internal.session, {});
+  }
   const typedDb = db as unknown as Db;
   if (demo) {
     const { seedDemoData } = await import("@/server/services/demo");
